@@ -1,0 +1,40 @@
+---
+- name: 🔍 VPS 资源与业务健康看板
+  hosts: racknerd
+  become: true
+  gather_facts: yes
+  tasks:
+    - name: 检查内部服务回环监听
+      ansible.builtin.wait_for:
+        port: "{{ item }}"
+        host: 127.0.0.1
+        timeout: 2
+      loop:
+        - "{{ aria2_internal_port | int }}"
+        - "{{ v2ray_internal_port | int }}"
+      ignore_errors: true
+
+    - name: 探测旧 SSH 端口 (22) 状态
+      ansible.builtin.wait_for:
+        port: 22
+        host: 127.0.0.1
+        timeout: 1
+      register: ssh_22_check
+      ignore_errors: true
+
+    - name: 📊 打印健康报告
+      vars:
+        root_info: "{{ ansible_mounts | selectattr('mount', 'equalto', '/') | list | first }}"
+      ansible.builtin.debug:
+        msg: |
+          ====================================
+          [节点] {{ inventory_hostname }}
+          [Swap状态] {{ ansible_swaptotal_mb }}MB Total (2G优化已生效)
+          [存储占用] {{ (root_info.size_total - root_info.size_available) | human_readable }} / {{ root_info.size_total | human_readable }}
+          
+          # --- 安全审计 ---
+          [SSH 22 端口] {% if ssh_22_check.failed is defined and ssh_22_check.failed %}🔒 已关闭 (安全){% else %}⚠️ 仍开启 (有风险){% endif %}
+          {% if ssh_22_check.failed is not defined or not ssh_22_check.failed %}
+          >>> 提示：请立即运行 ./close_22.sh 以加固服务器！
+          {% endif %}
+          ====================================

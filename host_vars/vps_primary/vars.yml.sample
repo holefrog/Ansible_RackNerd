@@ -1,0 +1,42 @@
+# ============================================
+# vps_primary 主机变量配置 (Sample)
+# ============================================
+
+# --- 1. 连接与认证 (Ansible 核心变量) ---
+# 远程服务器地址与端口
+ansible_host: "1.2.3.4"
+ansible_user: "root"
+ansible_port: 22
+
+# 指向 keys/ 目录下的私钥文件
+ansible_ssh_private_key_file: "keys/vps_primary_key"
+
+# --- 2. 基础安全配置 ---
+ssh_port: 9929                          # 部署后修改的自定义 SSH 端口
+info_path: "status-page-hidden"         # 混淆后的状态看板路径
+
+# --- 3. 域名与 Web 规划 ---
+domain: "your-domain.com"
+email: "your-email@example.com"
+web_root: "/var/www/{{ domain }}"
+ssl_cert_dir: "/etc/letsencrypt/live"
+shared_data_dir: "/var/www/downloads"   # Aria2/WebDAV 共享存储路径
+
+# --- 4. 服务运行用户 ---
+web_user: "nginx"                       # Nginx 与相关业务运行账户
+vpn_user: "nobody"                      # V2Ray 运行账户
+webdav_user: "admin"                    # WebDAV 网页登录用户名
+
+# --- 5. 业务逻辑与内部端口 ---
+v2ray_path_url: "v2-ws-path"            # V2Ray WebSocket 混淆路径
+swap_size_mb: 2048                      # 虚拟内存大小
+aria2_internal_port: 6800               # Aria2 RPC 端口
+v2ray_internal_port: 10086              # V2Ray 内部监听端口
+
+# --- 6. 系统参数 ---
+server_timezone: "America/Vancouver"    # 系统时区
+
+# --- 7. WebDAV 专用变量 ---
+webdav_htpasswd_path: "/etc/nginx/.htpasswd_webdav"
+# 已统一：必须使用 web_footer_name 才能匹配 site.conf.j2 模板引用
+webdav_footer_name: "webdav_footer.html"

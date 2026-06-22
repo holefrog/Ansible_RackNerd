@@ -1,0 +1,36 @@
+---
+- name: 确保 Firewalld 正在运行
+  ansible.builtin.systemd:
+    name: firewalld
+    state: started
+    enabled: true
+
+- name: 放行基础业务端口与自定义 SSH 端口
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    state: enabled
+    permanent: true
+    immediate: true
+  loop:
+    - "80/tcp"
+    - "443/tcp"
+    - "{{ ssh_port }}/tcp"
+
+- name: 显式确保 22 端口在部署期间保持开启 (防止自锁)
+  ansible.posix.firewalld:
+    port: "22/tcp"
+    state: enabled
+    permanent: true
+    immediate: true
+
+- name: 移除默认的危险开放服务 (不含 SSH)
+  ansible.posix.firewalld:
+    service: "{{ item }}"
+    state: disabled
+    permanent: true
+    immediate: true
+  loop:
+    - cockpit
+    - dhcpv6-client
+  # 修复 ignore-errors: 改用 failed_when 声明此任务允许不成功的状态
+  failed_when: false

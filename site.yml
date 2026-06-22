@@ -1,0 +1,25 @@
+---
+- name: 🚀 RackNerd VPS 企业级自动化部署
+  hosts: racknerd
+  become: true
+  gather_facts: false
+
+  pre_tasks:
+    - name: Ensure Python 3 DNF bindings are installed (fixes old Python issue on target)
+      ansible.builtin.raw: "dnf install -y python3-dnf || yum install -y python3-dnf || true"
+      changed_when: false
+      ignore_errors: true
+
+    - name: Gather facts after python environment is ready
+      ansible.builtin.setup:
+  # 必须通过 roles 关键字挂载你写的任务文件夹
+  roles:
+    - security          # 执行 SSH 安全加固与公钥部署
+    - infrastructure    # 执行系统更新、BBR、Nginx、WebDAV、DDNS
+    - application       # 执行 Aria2 安装
+    - vpn               # 执行 V2Ray 安装与订阅链接生成
+
+  tasks:
+    - name: 打印部署状态
+      ansible.builtin.debug:
+        msg: "正在部署到 {{ domain }}，管理用户为 {{ web_user }}"

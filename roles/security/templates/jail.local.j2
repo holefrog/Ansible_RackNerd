@@ -1,0 +1,16 @@
+[DEFAULT]
+# 封禁时间 (1天)
+bantime  = 86400
+# 检测时间范围 (10分钟)
+findtime  = 600
+# 最大重试次数
+maxretry = 3
+# 使用 firewalld 的富规则作为封禁动作
+banaction = firewallcmd-rich-rules
+
+[sshd]
+enabled = true
+# 动态引用你在 vars 中定义的 SSH 端口
+port    = {{ ssh_port }}
+logpath = %(sshd_log)s
+backend = systemd

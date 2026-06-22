@@ -1,0 +1,79 @@
+---
+# v4
+- name: Install and deploy V2Ray using official script
+  ansible.builtin.shell: bash <(curl -L https://raw.githubusercontent.com/v2fly/fhs-install-v2ray/master/install-release.sh)
+  args:
+    creates: /usr/local/bin/v2ray
+
+- name: Create V2Ray log directory
+  ansible.builtin.file:
+    path: /var/log/v2ray
+    state: directory
+    owner: "{{ vpn_user | default('nobody') }}"
+    group: "{{ vpn_user | default('nobody') }}"
+    mode: '0755'
+
+- name: Render V2Ray server configuration
+  ansible.builtin.template:
+    src: v2ray.json.j2
+    dest: /usr/local/etc/v2ray/config.json
+    mode: '0644'
+  notify: Restart v2ray
+
+- name: Start and enable V2Ray service
+  ansible.builtin.systemd:
+    name: v2ray
+    state: started
+    enabled: true
+
+# --- 1. 渲染客户端 JSON 配置文件 ---
+- name: Render V2Ray client JSON configuration
+  ansible.builtin.template:
+    src: vmess_client.json.j2
+    dest: "{{ shared_data_dir }}/v2ray_client.json"
+    owner: "{{ web_user }}"
+    group: "{{ web_user }}"
+    mode: '0644'
+
+# --- 2. 生成订阅链接 (vmess://) ---
+- name: Generate vmess subscription link
+  ansible.builtin.copy:
+    dest: "{{ shared_data_dir }}/v2ray_link.txt"
+    content: "vmess://{{ lookup('template', 'vmess_client.json.j2') | b64encode }}"
+    owner: "{{ web_user }}"
+    group: "{{ web_user }}"
+    mode: '0644'
+  register: v2ray_link_file
+
+# --- 3. 生成二维码图片 ---
+- name: Ensure qrencode is installed
+  ansible.builtin.dnf:
+    name: qrencode
+    state: present
+
+# 修复：在引用 qr_stat 之前先注册它
+- name: Check if QR code already exists
+  ansible.builtin.stat:
+    path: "{{ shared_data_dir }}/v2ray_qr.png"
+  register: qr_stat
+
+- name: Convert subscription link to QR code PNG
+  ansible.builtin.shell: |
+    set -o pipefail
+    VMESS_LINK=$(cat {{ shared_data_dir }}/v2ray_link.txt)
+    echo -n "$VMESS_LINK" | qrencode -o {{ shared_data_dir }}/v2ray_qr.png -s 10
+  args:
+    executable: /bin/bash
+  register: qrcode_gen
+  when: v2ray_link_file.changed or not qr_stat.stat.exists
+  changed_when: v2ray_link_file.changed or not qr_stat.stat.exists
+
+# --- 4. 修正生成文件权限 ---
+- name: Adjust permissions of generated files
+  ansible.builtin.file:
+    path: "{{ item }}"
+    owner: "{{ web_user }}"
+    group: "{{ web_user }}"
+    mode: '0644'
+  loop:
+    - "{{ shared_data_dir }}/v2ray_qr.png"

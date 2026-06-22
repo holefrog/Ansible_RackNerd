@@ -1,0 +1,12 @@
+---
+- name: 部署 ChangeIP DDNS 更新脚本
+  ansible.builtin.template:
+    src: changeip.sh.j2
+    dest: /usr/local/bin/changeip.sh
+    mode: '0755'
+
+- name: 配置 DDNS 定时任务 (每15分钟)
+  ansible.builtin.cron:
+    name: "Update ChangeIP DDNS"
+    minute: "*/15"
+    job: "/usr/local/bin/changeip.sh >> /var/log/changeip.log 2>&1"

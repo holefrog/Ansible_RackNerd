@@ -1,0 +1,23 @@
+---
+- name: Create web root directory
+  ansible.builtin.file:
+    path: "{{ web_root }}"
+    state: directory
+    owner: "{{ web_user }}"
+    mode: '0755'
+
+- name: Deploy WebDAV htpasswd via template
+  ansible.builtin.template:
+    src: htpasswd.j2
+    dest: "{{ webdav_htpasswd_path }}"
+    mode: '0640'
+    owner: "{{ web_user }}"
+  # 修正：匹配首字母大写的 Handler
+  notify: Restart nginx
+
+- name: Deploy WebDAV footer functionality script
+  ansible.builtin.template:
+    src: webdav_footer.html.j2
+    dest: "{{ web_root }}/{{ webdav_footer_name }}"
+    owner: "{{ web_user }}"
+    mode: '0644'

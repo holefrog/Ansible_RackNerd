@@ -1,0 +1,3 @@
+---
+- name: 导入 Aria2 配置与部署任务
+  ansible.builtin.import_tasks: aria2.yml

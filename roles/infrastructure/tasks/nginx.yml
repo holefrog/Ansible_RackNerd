@@ -1,0 +1,79 @@
+---
+# v6
+- name: Install Nginx and Certbot
+  ansible.builtin.dnf:
+    name:
+      - nginx
+      - certbot
+      - python3-certbot-nginx
+    state: present
+
+- name: Get Nginx compile parameters
+  ansible.builtin.command: nginx -V
+  register: nginx_v_info
+  changed_when: false
+
+- name: Verify http_addition_module support
+  ansible.builtin.assert:
+    that: >
+      'with-http_addition_module' in nginx_v_info.stderr or
+      'with-http_addition_module' in nginx_v_info.stdout
+    fail_msg: "错误：当前 Nginx 不支持 add_after_body 模块。"
+
+# --- 证书申请（仅首次）---
+- name: Check if SSL certificate exists
+  ansible.builtin.stat:
+    path: "{{ ssl_cert_dir }}/{{ domain }}/fullchain.pem"
+  register: cert_file
+
+# 移除了手动的 systemd 状态检查和停止任务，交由 Certbot 的 pre-hook 处理
+
+- name: Request SSL certificate via Certbot standalone
+  when: not cert_file.stat.exists
+  block:
+    - name: Run Certbot
+      ansible.builtin.shell: |
+        certbot certonly --standalone -d {{ domain }} \
+        --non-interactive --agree-tos --email {{ email }} \
+        --pre-hook "systemctl stop nginx" \
+        --post-hook "systemctl start nginx"
+      register: certbot_result
+      changed_when: certbot_result.rc == 0
+  rescue:
+    - name: Certbot failed - restart Nginx to restore service
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+    - name: Fail with clear message
+      ansible.builtin.fail:
+        msg: "证书申请失败，Nginx 已恢复启动，请检查域名解析是否生效。"
+
+# --- 配置渲染（证书就绪后才执行）---
+- name: Render Nginx site configuration
+  ansible.builtin.template:
+    src: site.conf.j2
+    dest: /etc/nginx/conf.d/{{ domain }}.conf
+    mode: '0644'
+  notify: Restart nginx
+
+- name: Deploy robots.txt
+  ansible.builtin.template:
+    src: robots.txt.j2
+    dest: "{{ shared_data_dir }}/robots.txt"
+    mode: '0644'
+
+# --- 统一启动 ---
+- name: Flush handlers before starting Nginx
+  ansible.builtin.meta: flush_handlers
+
+- name: Start and enable Nginx
+  ansible.builtin.systemd:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Force activate Certbot auto-renewal timer
+  ansible.builtin.systemd:
+    name: certbot-renew.timer
+    state: started
+    enabled: true

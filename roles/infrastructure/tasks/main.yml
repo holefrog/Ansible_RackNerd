@@ -1,0 +1,12 @@
+---
+- name: 导入系统基础优化任务
+  ansible.builtin.import_tasks: system.yml
+
+- name: 导入 Nginx 服务部署任务
+  ansible.builtin.import_tasks: nginx.yml
+
+- name: 导入 WebDAV 文件管理任务
+  ansible.builtin.import_tasks: webdav.yml
+
+- name: 导入 DDNS 动态域名任务
+  ansible.builtin.import_tasks: ddns.yml

@@ -1,0 +1,35 @@
+---
+- name: 安装 Aria2
+  ansible.builtin.dnf:
+    name: aria2
+    state: present
+
+- name: 创建 Aria2 配置目录
+  ansible.builtin.file:
+    path: /etc/aria2
+    state: directory
+    owner: "{{ web_user }}"
+    group: "{{ web_user }}"
+    mode: '0755'
+
+- name: 渲染 Aria2 配置文件
+  ansible.builtin.template:
+    src: aria2.conf.j2
+    dest: /etc/aria2/aria2.conf
+    owner: "{{ web_user }}"
+    mode: '0644'
+  notify: Restart aria2
+
+- name: 部署 Systemd 服务 (使用非 root 用户降权)
+  ansible.builtin.template:
+    src: aria2.service.j2
+    dest: /etc/systemd/system/aria2.service
+    mode: '0644'
+  notify: Restart aria2
+
+- name: 启动并启用 Aria2
+  ansible.builtin.systemd:
+    name: aria2
+    state: started
+    enabled: true
+    daemon_reload: true

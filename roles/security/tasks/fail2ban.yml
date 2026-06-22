@@ -1,0 +1,22 @@
+---
+- name: Install Fail2ban and systemd support
+  ansible.builtin.dnf:
+    name: [fail2ban, fail2ban-systemd]
+    state: present
+
+- name: Deploy Fail2ban jail.local configuration from template
+  ansible.builtin.template:
+    src: jail.local.j2
+    dest: /etc/fail2ban/jail.local
+    # 修复 risky-file-permissions: 明确设置文件权限
+    mode: '0644'
+    owner: root
+    group: root
+  # 修复 name[casing]: 确保 notify 指向大写开头的 Handler
+  notify: Restart fail2ban
+
+- name: Start and enable Fail2ban service
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+    enabled: true

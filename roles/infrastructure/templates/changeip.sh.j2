@@ -1,0 +1,14 @@
+#!/bin/bash
+# 自动生成的 ChangeIP DDNS 更新脚本
+DOMAIN="{{ domain }}"
+USER="{{ ddns_user }}"
+PASS="{{ ddns_password }}"
+
+IP=$(curl -s https://api.ipify.org || curl -s https://ipv4.icanhazip.com)
+if [ -z "$IP" ]; then
+    echo "$(date) - 无法获取公网 IP"
+    exit 1
+fi
+
+RESPONSE=$(curl -s -u "$USER:$PASS" "https://nic.changeip.com/nic/update?u=$USER&p=$PASS&hostname=$DOMAIN&myip=$IP")
+echo "$(date) - IP: $IP - Response: $RESPONSE"

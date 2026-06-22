@@ -1,0 +1,10 @@
+# hosts.yml
+all:
+  children:
+    racknerd:  # 创建一个名为 racknerd 的组
+      hosts:
+        vps_primary:
+          ansible_host: x.x.x.x
+          
+        vps_secondary:
+          ansible_host: y.y.y.y  # 第一台主机的实际 IP

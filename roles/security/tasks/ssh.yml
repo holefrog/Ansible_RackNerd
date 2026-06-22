@@ -1,0 +1,22 @@
+---
+# 必须先部署公钥，再禁用密码
+- name: Deploy local public key to remote authorized_keys
+  ansible.posix.authorized_key:
+    user: "{{ ansible_user }}"
+    state: present
+    key: "{{ lookup('file', ansible_ssh_private_key_file + '.pub') }}"
+
+- name: Configure SSH port and disable password authentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    mode: '0600'
+  loop:
+    - { regexp: '^#?Port', line: "Port {{ ssh_port }}" }
+    - { regexp: '^#?PasswordAuthentication', line: "PasswordAuthentication no" }
+    - { regexp: '^#?PubkeyAuthentication', line: "PubkeyAuthentication yes" }
+  notify: Restart sshd
+
+- name: Flush handlers to apply SSHD changes immediately
+  ansible.builtin.meta: flush_handlers

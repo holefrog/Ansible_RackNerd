@@ -1,0 +1,9 @@
+---
+- name: 导入 SSH 配置与安全加固任务
+  ansible.builtin.import_tasks: ssh.yml
+
+- name: 导入 Fail2ban 暴力破解防护任务
+  ansible.builtin.import_tasks: fail2ban.yml
+
+- name: 导入 Firewalld 防火墙基础配置
+  ansible.builtin.import_tasks: firewall.yml

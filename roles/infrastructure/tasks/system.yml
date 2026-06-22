@@ -1,0 +1,100 @@
+---
+# roles/infrastructure/tasks/system.yml
+
+- name: Upgrade all system packages   # noqa: package-latest
+  ansible.builtin.dnf:
+    name: "*"
+    state: latest
+    update_cache: true
+
+- name: Install basic maintenance tools
+  ansible.builtin.dnf:
+    name: [epel-release, jq, cronie, tar, wget, curl]
+    state: present
+
+# --- 核心改进：Swap 挂载状态检查逻辑 ---
+- name: Check if Swap is already active
+  ansible.builtin.command: swapon --show
+  register: swapon_output
+  changed_when: false
+
+- name: Configure 2GB Swap virtual memory
+  when: "'/swapfile' not in swapon_output.stdout"
+  block:
+    - name: Create swap file
+      ansible.builtin.command:
+        cmd: "dd if=/dev/zero of=/swapfile bs=1M count={{ swap_size_mb | default(2048) }}"
+        creates: /swapfile
+      changed_when: true
+
+    - name: Set secure permissions for swap file
+      ansible.builtin.file:
+        path: /swapfile
+        mode: '0600'
+        owner: root
+        group: root
+
+    - name: Format swap file
+      ansible.builtin.command: mkswap /swapfile
+      changed_when: true
+
+    - name: Activate swap file
+      ansible.builtin.command: swapon /swapfile
+      changed_when: true
+
+    - name: Ensure swap configuration is persistent in fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^/swapfile'
+        line: '/swapfile none swap sw 0 0'
+        state: present
+
+- name: Enable BBR kernel congestion control
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+  loop:
+    - {key: 'net.core.default_qdisc', value: 'fq'}
+    - {key: 'net.ipv4.tcp_congestion_control', value: 'bbr'}
+
+
+
+- name: Set system timezone
+  community.general.timezone:
+    name: "{{ server_timezone }}"
+
+- name: Install dnf-automatic for system security
+  ansible.builtin.dnf:
+    name: dnf-automatic
+    state: present
+
+- name: Enable automatic security updates
+  ansible.builtin.lineinfile:
+    path: /etc/dnf/automatic.conf
+    regexp: '^apply_updates =.*'
+    line: 'apply_updates = yes'
+  # 修正：匹配首字母大写的 Handler
+  notify: Restart dnf-automatic
+
+- name: Deploy custom logrotate rules
+  ansible.builtin.copy:
+    dest: /etc/logrotate.d/racknerd_custom
+    content: |
+      /var/log/aria2/*.log /var/log/v2ray/*.log {
+          daily
+          rotate 7
+          compress
+          missingok
+          notifempty
+          size 50M
+          su {{ web_user }} {{ web_user }}
+      }
+    mode: '0644'
+
+- name: 全局配置自定义别名
+  copy:
+    dest: /etc/profile.d/custom_aliases.sh
+    content: |
+      alias ll='ls -l -tr'
+    mode: '0644'

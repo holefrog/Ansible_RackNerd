@@ -1,0 +1,3 @@
+---
+- name: Import V2Ray core deployment tasks
+  ansible.builtin.import_tasks: v2ray.yml
