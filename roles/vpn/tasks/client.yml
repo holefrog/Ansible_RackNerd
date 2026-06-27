@@ -9,7 +9,7 @@
     mode: '0755'
 
 - name: Render Xray client JSON configuration
-  # 渲染一份标准的客户端 config.json，方便用户直接导入到各类 Xray 客户端 (如 v2rayN)
+  # 渲染一份标准的客户端 config.json，方便用户直接导入到各类 Xray 客户端 (如 v2rayN/Xray)
   ansible.builtin.template:
     src: vless_client.json.j2
     dest: "{{ shared_data_dir }}/xray_client.json"

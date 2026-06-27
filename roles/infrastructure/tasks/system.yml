@@ -81,7 +81,7 @@
   ansible.builtin.copy:
     dest: /etc/logrotate.d/racknerd_custom
     content: |
-      /var/log/aria2/*.log /var/log/v2ray/*.log {
+      /var/log/aria2/*.log /var/log/xray/*.log {
           daily
           rotate 7
           compress

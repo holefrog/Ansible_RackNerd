@@ -21,14 +21,14 @@ shared_data_dir: "/var/www/downloads"   # Aria2/WebDAV 共享存储路径
 
 # --- 4. 服务运行用户 ---
 web_user: "nginx"                       # Nginx 与相关业务运行账户
-vpn_user: "nobody"                      # V2Ray 运行账户
+vpn_user: "nobody"                      # Xray 运行账户
 webdav_user: "admin"                    # WebDAV 网页登录用户名
 
 # --- 5. 业务逻辑与内部端口 ---
-v2ray_path_url: "v2-ws-path"            # V2Ray WebSocket 混淆路径
 swap_size_mb: 2048                      # 虚拟内存大小
 aria2_internal_port: 6800               # Aria2 RPC 端口
-v2ray_internal_port: 10086              # V2Ray 内部监听端口
+xray_internal_port: 10086               # Xray 内部监听端口
+vpn_service_name: "xray"                # Xray 服务名称
 
 # --- 6. 系统参数 ---
 server_timezone: "America/Vancouver"    # 系统时区

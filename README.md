@@ -7,7 +7,7 @@
 * **多机架构设计**：完全弃用 `group_vars`，通过 `host_vars/主机名/` 实现多台 VPS 的精准控制，支持不同域名、端口及密钥配置。
 * **网络连通与业务域名分离**：在 `hosts.yml` 中强制使用公网 IP（`ansible_host`）以保障底层的 SSH 连接稳定性，而在 `host_vars` 中将域名抽离为纯业务变量（`domain`）。这彻底解决了全新主机部署时，因 DNS 记录尚未生效而导致 Ansible 无法连接的“鸡生蛋”困境。
 * **WebDAV 管理增强**：通过 Nginx `add_after_body` 注入自定义脚本，实现网页端图标预览及**路径纠偏后的直接删除**功能。
-* **V2Ray 自动化闭环**：一键部署并同步生成 JSON、vmess 链接及二维码，修复了 Shell 变量引号导致的 JSON 损坏风险。
+* **Xray 自动化闭环**：一键部署并同步生成 JSON、VLESS 链接及二维码，消除手动拼写的风险。
 * **SSL 自动化 (零竞态)**：内置 Certbot 逻辑，申请证书前自动关停 Nginx 以释放 80 端口，解决首次部署的端口冲突。
 * **三重严格校验**：`deploy.sh` 集成 `ansible-lint` 静态分析、语法校验及 `--check` 逻辑干跑，从根源杜绝变量名带空格或私钥误读导致的生产崩溃。
 
@@ -37,5 +37,5 @@
 │   ├── application           # 应用层 (Aria2 安装与降权运行)
 │   ├── infrastructure        # 基础层 (Nginx, WebDAV, DDNS, 系统优化)
 │   ├── security              # 安全层 (SSH 密钥分发, 防火墙, Fail2ban)
-│   └── vpn                   # 代理层 (V2Ray 安装与订阅分发)
+│   └── vpn                   # 代理层 (Xray 安装与订阅分发)
 └── site.yml                  # 部署总入口 (挂载所有 Roles)
