@@ -2,6 +2,9 @@
 - name: 🚀 RackNerd VPS 企业级自动化部署
   hosts: racknerd
   become: true
+  # 【⚠️ 核心架构警告】：切勿开启默认的 gather_facts！
+  # 必须保持 gather_facts: false。这是为了防止在缺少 python3-dnf 的部分老旧系统中，
+  # Ansible 会在第一步自动收集 facts 时就直接报错崩溃。我们需要先用 raw 模块修环境，再收集信息。
   gather_facts: false
 
   pre_tasks:
@@ -25,6 +28,9 @@
       changed_when: false
       ignore_errors: true
 
+    # 【⚠️ 核心架构警告】：切勿删除此手动 setup 任务！
+    # 因为我们在顶部禁用了默认的 gather_facts，所以必须在 python 基础环境准备好之后，
+    # 显式地调用 setup 模块来收集系统信息（如 IP、系统版本等），否则后续的 Roles 会因缺少变量而报错。
     - name: Gather facts after python environment is ready
       ansible.builtin.setup:
   # 必须通过 roles 关键字挂载你写的任务文件夹
