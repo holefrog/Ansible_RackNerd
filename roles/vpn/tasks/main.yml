@@ -1,3 +1,15 @@
 ---
-- name: Import Xray core deployment tasks
-  ansible.builtin.import_tasks: vpn.yml
+- name: 导入核心安装与基础环境设置
+  ansible.builtin.import_tasks: install.yml
+
+- name: 导入 Reality 密钥管理与自愈逻辑
+  ansible.builtin.import_tasks: keys.yml
+
+- name: 导入 Xray 服务端配置与服务启停
+  ansible.builtin.import_tasks: server.yml
+
+- name: 导入客户端配置与分享凭证导出
+  ansible.builtin.import_tasks: client.yml
+
+- name: 导入网络集成 (Nginx 伪装代理与防火墙放行)
+  ansible.builtin.import_tasks: network.yml
