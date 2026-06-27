@@ -16,54 +16,10 @@ server {
     tcp_nopush on;
     client_max_body_size 0;
 
-    location /webdav {
-        alias {{ shared_data_dir }};
-        autoindex on;
-        
-        # 动态引用变量名
-        add_after_body /{{ webdav_footer_name }};
-
-        dav_methods PUT DELETE MKCOL COPY MOVE;
-        create_full_put_path on;
-        dav_access user:rw group:rw all:r;
-
-        auth_basic "Storage";
-        auth_basic_user_file {{ webdav_htpasswd_path }};
-    }
-
-    # 静态资源匹配也改为变量化
-    location = /{{ webdav_footer_name }} {
-        internal;
-        alias {{ web_root }}/{{ webdav_footer_name }};
-        default_type text/html;
-    }
-    
     # 默认兜底路由，修复内部子请求上下文丢失导致的 500 错误，并提升防扫描安全性
     location / {
         return 404;
     }
-    
-    
-    # Aria2 反向代理 (安全隐藏 6800)
-    location /jsonrpc {
-        proxy_pass http://127.0.0.1:{{ aria2_internal_port }};
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-
-    # V2Ray 反向代理 (安全隐藏 10086)
-    location /{{ v2ray_path_url }} {
-        proxy_pass http://127.0.0.1:{{ v2ray_internal_port }};
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection "upgrade";
-    }
-
-
-
-    # 禁止搜索引擎
-    location = /robots.txt {
-        alias {{ shared_data_dir }}/robots.txt;
-    }
+    # 动态加载分发式的 Location 配置文件 (供 vpn-xray 等组件注入)
+    include /etc/nginx/conf.d/{{ domain }}.locations.d/*.conf;
 }

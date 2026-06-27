@@ -68,6 +68,12 @@
     state: directory
     mode: '0755'
 
+- name: Ensure Nginx locations.d directory exists
+  ansible.builtin.file:
+    path: "/etc/nginx/conf.d/{{ domain }}.locations.d"
+    state: directory
+    mode: '0755'
+
 - name: Inject stream block into nginx.conf
   ansible.builtin.blockinfile:
     path: /etc/nginx/nginx.conf

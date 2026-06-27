@@ -1,0 +1,26 @@
+location /webdav {
+    alias {{ shared_data_dir }};
+    autoindex on;
+    
+    # 动态引用变量名
+    add_after_body /{{ webdav_footer_name }};
+
+    dav_methods PUT DELETE MKCOL COPY MOVE;
+    create_full_put_path on;
+    dav_access user:rw group:rw all:r;
+
+    auth_basic "Storage";
+    auth_basic_user_file {{ webdav_htpasswd_path }};
+}
+
+# 静态资源匹配也改为变量化
+location = /{{ webdav_footer_name }} {
+    internal;
+    alias {{ web_root }}/{{ webdav_footer_name }};
+    default_type text/html;
+}
+
+# 禁止搜索引擎
+location = /robots.txt {
+    alias {{ shared_data_dir }}/robots.txt;
+}
