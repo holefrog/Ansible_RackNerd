@@ -1,0 +1,40 @@
+---
+- name: Ensure Nginx locations.d directory exists
+  ansible.builtin.file:
+    path: "/etc/nginx/conf.d/{{ domain }}.locations.d"
+    state: directory
+    mode: '0755'
+
+- name: Deploy Xray location configuration
+  # 将配置（如下发凭证下载路由，或 fallback 反向代理路由）整合到 Nginx 中
+  ansible.builtin.template:
+    src: nginx-xray.conf.j2
+    dest: "/etc/nginx/conf.d/{{ domain }}.locations.d/xray.conf"
+    mode: '0644'
+  notify: Restart nginx
+
+- name: Deploy Xray SNI stream routing configuration
+  # 将去除了外层 stream {} 的 SNI 分流配置放入独立目录
+  ansible.builtin.template:
+    src: nginx-stream-sni.conf.j2
+    dest: /etc/nginx/stream.conf.d/xray-sni.conf
+    mode: '0644'
+  notify: Restart nginx
+
+- name: Block external access to Xray internal port in Firewalld (IPv4)
+  # 配合 SNI 分流架构，关闭外网直接访问内部端口 (如 10086)，仅允许本地转发
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv4" source not address="127.0.0.1" port port="{{ xray_internal_port }}" protocol="tcp" drop'
+    state: enabled
+    permanent: true
+    immediate: true
+  become: true
+
+- name: Block external access to Xray internal port in Firewalld (IPv6)
+  # 配合 SNI 分流架构，关闭 IPv6 外网直接访问内部端口，防止绕过
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv6" source not address="::1" port port="{{ xray_internal_port }}" protocol="tcp" drop'
+    state: enabled
+    permanent: true
+    immediate: true
+  become: true

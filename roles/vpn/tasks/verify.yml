@@ -1,0 +1,10 @@
+---
+- name: Verify service is active
+  # 验证 服务是否已成功启动并处于 active 状态
+  ansible.builtin.command: systemctl is-active {{ vpn_service_name | mandatory }}
+  register: service_status
+  changed_when: false
+
+- name: Display service status
+  ansible.builtin.debug:
+    msg: "✅ Service [ {{ vpn_service_name | mandatory }} ] is currently: {{ service_status.stdout }}"

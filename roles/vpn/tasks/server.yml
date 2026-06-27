@@ -1,0 +1,17 @@
+---
+- name: Render Xray server configuration
+  # 根据提取到的密钥变量 (xray_keys) 渲染最终的 Xray 服务端配置文件
+  ansible.builtin.template:
+    src: xray.json.j2
+    dest: /usr/local/etc/xray/config.json
+    owner: "{{ vpn_user | default('nobody') }}"
+    group: "{{ vpn_user | default('nobody') }}"
+    mode: '0644'
+  notify: Restart xray
+
+- name: Start and enable Xray service
+  # 确保 Xray 服务启动，并设置开机自启
+  ansible.builtin.systemd:
+    name: xray
+    state: started
+    enabled: true

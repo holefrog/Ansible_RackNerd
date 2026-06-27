@@ -38,7 +38,7 @@
     - security          # 执行 SSH 安全加固与公钥部署
     - infrastructure    # 执行系统更新、BBR、Nginx、WebDAV、DDNS
     - application       # 执行 Aria2 安装
-    - vpn-xray          # 执行 Xray (VLESS+Reality) 安装与 SNI 分流配置
+    - vpn               # 执行 Xray (VLESS+Reality) 安装与 SNI 分流配置
 
   tasks:
     - name: 打印部署状态

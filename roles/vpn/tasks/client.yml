@@ -1,0 +1,58 @@
+---
+- name: Ensure shared data directory exists
+  # 确保用于给 Nginx 提供静态分享（如二维码、链接下载）的目录存在
+  ansible.builtin.file:
+    path: "{{ shared_data_dir }}"
+    state: directory
+    owner: "{{ web_user }}"
+    group: "{{ web_user }}"
+    mode: '0755'
+
+- name: Render Xray client JSON configuration
+  # 渲染一份标准的客户端 config.json，方便用户直接导入到各类 Xray 客户端 (如 v2rayN)
+  ansible.builtin.template:
+    src: vless_client.json.j2
+    dest: "{{ shared_data_dir }}/xray_client.json"
+    owner: "{{ web_user }}"
+    group: "{{ web_user }}"
+    mode: '0644'
+
+- name: Generate VLESS Reality subscription link
+  # 生成标准的 vless:// 订阅链接，保存为文本文件
+  ansible.builtin.template:
+    src: vless_link.txt.j2
+    dest: "{{ shared_data_dir }}/xray_link.txt"
+    owner: "{{ web_user }}"
+    group: "{{ web_user }}"
+    mode: '0644'
+  register: xray_link_file
+
+- name: Ensure qrencode is installed
+  # 安装二维码生成工具
+  ansible.builtin.dnf:
+    name: qrencode
+    state: present
+
+- name: Check if QR code already exists
+  ansible.builtin.stat:
+    path: "{{ shared_data_dir }}/xray_qr.png"
+  register: qr_stat
+
+- name: Convert subscription link to QR code PNG
+  # 如果订阅链接有变动，或者二维码图片丢失，则重新将链接文本转换为二维码图片
+  ansible.builtin.shell: |
+    set -o pipefail
+    VLESS_LINK=$(cat {{ shared_data_dir }}/xray_link.txt)
+    echo -n "$VLESS_LINK" | qrencode -o {{ shared_data_dir }}/xray_qr.png -s 10
+  args:
+    executable: /bin/bash
+  when: xray_link_file.changed or not qr_stat.stat.exists
+
+- name: Adjust permissions of generated files
+  # 确保生成的二维码文件具有正确的读取权限，以便 Nginx web 服务器下发
+  ansible.builtin.file:
+    path: "{{ shared_data_dir }}/xray_qr.png"
+    owner: "{{ web_user }}"
+    group: "{{ web_user }}"
+    mode: '0644'
+  when: xray_link_file.changed or not qr_stat.stat.exists

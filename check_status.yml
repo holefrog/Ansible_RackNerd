@@ -11,7 +11,7 @@
         timeout: 2
       loop:
         - "{{ aria2_internal_port | int }}"
-        - "{{ v2ray_internal_port | int }}"
+        - "{{ xray_internal_port | int }}"
       ignore_errors: true
 
     - name: 探测旧 SSH 端口 (22) 状态
