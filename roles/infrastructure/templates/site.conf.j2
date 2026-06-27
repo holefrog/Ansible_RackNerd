@@ -5,7 +5,7 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
+    listen 4433 ssl http2;
     server_name {{ domain }};
 
     ssl_certificate {{ ssl_cert_dir }}/{{ domain }}/fullchain.pem;

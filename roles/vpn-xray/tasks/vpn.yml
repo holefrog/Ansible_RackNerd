@@ -33,7 +33,7 @@
     path: /var/log/xray
     state: directory
     owner: "{{ vpn_user | default('nobody') }}"
-    group: "{{ vpn_group | default('nogroup') }}"
+    group: "{{ vpn_user | default('nobody') }}"
     mode: '0755'
 
 # ==============================================================================
@@ -120,7 +120,7 @@
     src: xray.json.j2
     dest: /usr/local/etc/xray/config.json
     owner: "{{ vpn_user | default('nobody') }}"
-    group: "{{ vpn_group | default('nogroup') }}"
+    group: "{{ vpn_user | default('nobody') }}"
     mode: '0644'
   notify: Restart xray
 
@@ -165,10 +165,9 @@
 
 - name: Ensure qrencode is installed
   # 安装二维码生成工具
-  ansible.builtin.apt:
+  ansible.builtin.dnf:
     name: qrencode
     state: present
-    update_cache: true
 
 - name: Check if QR code already exists
   ansible.builtin.stat:
@@ -198,13 +197,19 @@
 # 5. 网络集成：Nginx 伪装代理与防火墙放行
 # ==============================================================================
 
+- name: Ensure Nginx locations.d directory exists
+  ansible.builtin.file:
+    path: "/etc/nginx/conf.d/{{ domain }}.locations.d"
+    state: directory
+    mode: '0755'
+
 - name: Deploy Xray location configuration
   # 将配置（如下发凭证下载路由，或 fallback 反向代理路由）整合到 Nginx 中
   ansible.builtin.template:
     src: nginx-xray.conf.j2
     dest: "/etc/nginx/conf.d/{{ domain }}.locations.d/xray.conf"
     mode: '0644'
-  notify: Reload Nginx
+  notify: Restart nginx
 
 - name: Deploy Xray SNI stream routing configuration
   # 将去除了外层 stream {} 的 SNI 分流配置放入独立目录
@@ -212,34 +217,25 @@
     src: nginx-stream-sni.conf.j2
     dest: /etc/nginx/stream.conf.d/xray-sni.conf
     mode: '0644'
-  notify: Reload Nginx
+  notify: Restart nginx
 
-- name: Block external access to Xray internal port in iptables (TCP)
+- name: Block external access to Xray internal port in Firewalld (IPv4)
   # 配合 SNI 分流架构，关闭外网直接访问内部端口 (如 10086)，仅允许本地转发
-  ansible.builtin.iptables:
-    chain: INPUT
-    protocol: tcp
-    destination_port: "{{ xray_internal_port }}"
-    source: "! 127.0.0.1"
-    jump: DROP
-    action: insert
-    rule_num: 1
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv4" source not address="127.0.0.1" port port="{{ xray_internal_port }}" protocol="tcp" drop'
+    state: enabled
+    permanent: true
+    immediate: true
   become: true
-  notify: Save iptables rules
 
-- name: Block external access to Xray internal port in ip6tables (TCP)
+- name: Block external access to Xray internal port in Firewalld (IPv6)
   # 配合 SNI 分流架构，关闭 IPv6 外网直接访问内部端口，防止绕过
-  ansible.builtin.iptables:
-    ip_version: ipv6
-    chain: INPUT
-    protocol: tcp
-    destination_port: "{{ xray_internal_port }}"
-    source: "! ::1"
-    jump: DROP
-    action: insert
-    rule_num: 1
+  ansible.posix.firewalld:
+    rich_rule: 'rule family="ipv6" source not address="::1" port port="{{ xray_internal_port }}" protocol="tcp" drop'
+    state: enabled
+    permanent: true
+    immediate: true
   become: true
-  notify: Save iptables rules
 
 # ==============================================================================
 # 6. 验证服务状态

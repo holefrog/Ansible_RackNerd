@@ -62,6 +62,23 @@
     dest: "{{ shared_data_dir }}/robots.txt"
     mode: '0644'
 
+- name: Ensure Nginx stream.conf.d directory exists
+  ansible.builtin.file:
+    path: /etc/nginx/stream.conf.d
+    state: directory
+    mode: '0755'
+
+- name: Inject stream block into nginx.conf
+  ansible.builtin.blockinfile:
+    path: /etc/nginx/nginx.conf
+    insertafter: EOF
+    marker: "# {mark} ANSIBLE MANAGED BLOCK - NGINX STREAM"
+    block: |
+      stream {
+          include /etc/nginx/stream.conf.d/*.conf;
+      }
+  notify: Restart nginx
+
 # --- 统一启动 ---
 - name: Flush handlers before starting Nginx
   ansible.builtin.meta: flush_handlers
