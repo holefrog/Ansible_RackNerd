@@ -18,5 +18,20 @@
     - { regexp: '^#?PubkeyAuthentication', line: "PubkeyAuthentication yes" }
   notify: Restart sshd
 
+- name: Handle Debian 12 ssh.socket conflict
+  ansible.builtin.systemd:
+    name: ssh.socket
+    state: stopped
+    enabled: false
+  failed_when: false
+  when: ansible_os_family == 'Debian'
+
+- name: Ensure standalone SSH service is enabled
+  ansible.builtin.systemd:
+    name: ssh
+    enabled: true
+  failed_when: false
+  when: ansible_os_family == 'Debian'
+
 - name: Flush handlers to apply SSHD changes immediately
   ansible.builtin.meta: flush_handlers
