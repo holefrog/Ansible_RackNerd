@@ -134,6 +134,7 @@ test_config.ini
 !ansible.sh
 !remote_login.sh
 !git_push_all.sh
+!close_22.sh
 
 
 # 重新允许 Git 进入 lib 文件夹
