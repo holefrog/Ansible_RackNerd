@@ -1,6 +1,6 @@
 ---
 - name: Install Fail2ban and systemd support
-  ansible.builtin.apt:
+  ansible.builtin.package:
     name: fail2ban
     state: present
 

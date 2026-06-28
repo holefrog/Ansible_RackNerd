@@ -29,7 +29,7 @@
 
 - name: Ensure qrencode is installed
   # 安装二维码生成工具
-  ansible.builtin.apt:
+  ansible.builtin.package:
     name: qrencode
     state: present
 

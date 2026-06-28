@@ -1,0 +1,6 @@
+---
+web_user: "www-data"
+vpn_group: "nogroup"
+certbot_timer_name: "certbot.timer"
+nginx_extra_packages:
+  - libnginx-mod-stream

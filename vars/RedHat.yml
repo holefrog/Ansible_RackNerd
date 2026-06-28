@@ -1,0 +1,5 @@
+---
+web_user: "nginx"
+vpn_group: "nobody"
+certbot_timer_name: "certbot-renew.timer"
+nginx_extra_packages: []

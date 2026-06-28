@@ -34,6 +34,9 @@
     # 显式地调用 setup 模块来收集系统信息（如 IP、系统版本等），否则后续的 Roles 会因缺少变量而报错。
     - name: Gather facts after python environment is ready
       ansible.builtin.setup:
+
+    - name: Load OS-specific variables
+      ansible.builtin.include_vars: "vars/{{ ansible_os_family }}.yml"
   # 必须通过 roles 关键字挂载你写的任务文件夹
   roles:
     - security          # 执行 SSH 安全加固与公钥部署

@@ -6,9 +6,10 @@
     name: "*"
     state: latest
     update_cache: true
+  when: ansible_os_family == 'Debian'
 
 - name: Install basic maintenance tools
-  ansible.builtin.apt:
+  ansible.builtin.package:
     name: [jq, cron, tar, wget, curl]
     state: present
 
@@ -68,6 +69,7 @@
   ansible.builtin.apt:
     name: [unattended-upgrades, apt-listchanges]
     state: present
+  when: ansible_os_family == 'Debian'
 
 - name: Enable automatic security updates
   ansible.builtin.copy:
@@ -77,6 +79,7 @@
       APT::Periodic::Unattended-Upgrade "1";
     mode: '0644'
   notify: Restart unattended-upgrades
+  when: ansible_os_family == 'Debian'
 
 - name: Deploy custom logrotate rules
   ansible.builtin.copy:
