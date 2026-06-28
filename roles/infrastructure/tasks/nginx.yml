@@ -4,6 +4,7 @@
   ansible.builtin.apt:
     name:
       - nginx
+      - libnginx-mod-stream
       - certbot
       - python3-certbot-nginx
     state: present
@@ -19,6 +20,7 @@
       'with-http_addition_module' in nginx_v_info.stderr or
       'with-http_addition_module' in nginx_v_info.stdout
     fail_msg: "错误：当前 Nginx 不支持 add_after_body 模块。"
+  ignore_errors: "{{ ansible_check_mode }}"
 
 # --- 证书申请（仅首次）---
 - name: Check if SSL certificate exists
