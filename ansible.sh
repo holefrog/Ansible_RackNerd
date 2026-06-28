@@ -70,6 +70,7 @@ if [[ "$MODE" == "Deploy" ]]; then
     chmod 400 "$KEY"
 
     # 从 hosts.yml 中自动提取第一个主机的 IP 作为默认目标
+    INV="hosts.yml"
     DEFAULT_HOST=$(awk '/^[ \t]*[a-zA-Z0-9_-]+:[ \t]*$/ {in_host=1; next} in_host && /^[ \t]*ansible_host:/ {print $2; exit}' "$INV" | tr -d '"'\''')
     
     # 提示是否分发公钥
