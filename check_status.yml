@@ -25,15 +25,7 @@
       ansible.builtin.setup:
 
   tasks:
-    - name: 检查内部服务回环监听
-      ansible.builtin.wait_for:
-        port: "{{ item }}"
-        host: 127.0.0.1
-        timeout: 2
-      loop:
-        - "{{ aria2_internal_port | int }}"
-        - "{{ xray_internal_port | int }}"
-      ignore_errors: true
+
 
     - name: 探测旧 SSH 端口 (22) 状态
       ansible.builtin.wait_for:
