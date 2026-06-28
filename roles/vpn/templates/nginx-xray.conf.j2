@@ -5,7 +5,7 @@ location = / {
 
 # 保护和隐蔽原有的 VPN 目录
 location /{{ xray_path_url }}/ {
-    alias {{ shared_data_dir }}/;
+    alias {{ web_root }}/{{ xray_path_url }}/;
     
     # 如果直接访问目录，不暴露内容，直接返回 404
     location = /{{ xray_path_url }}/ {
@@ -14,6 +14,6 @@ location /{{ xray_path_url }}/ {
     
     # 仅允许精确匹配文件名才能获取订阅链接和二维码
     location ~ ^/{{ xray_path_url }}/(xray_qr\.png|xray_link\.txt|xray_client\.json)$ {
-        alias {{ shared_data_dir }}/$1;
+        alias {{ web_root }}/{{ xray_path_url }}/$1;
     }
 }
