@@ -10,7 +10,6 @@ ansible_ssh_private_key_file: "keys/vps_primary_key"
 
 # --- 2. 基础安全配置 ---
 ssh_port: 9929                          # 部署后修改的自定义 SSH 端口
-info_path: "status-page-hidden"         # 混淆后的状态看板路径
 
 # --- 3. 域名与 Web 规划 ---
 domain: "your-domain.com"
@@ -34,5 +33,5 @@ server_timezone: "America/Vancouver"    # 系统时区
 
 # --- 7. WebDAV 专用变量 ---
 webdav_htpasswd_path: "/etc/nginx/.htpasswd_webdav"
-# 已统一：必须使用 web_footer_name 才能匹配 site.conf.j2 模板引用
+# 已统一：必须使用 webdav_footer_name 才能匹配 site.conf.j2 模板引用
 webdav_footer_name: "webdav_footer.html"
