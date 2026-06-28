@@ -44,3 +44,4 @@
     owner: "{{ vpn_user | default('nobody') }}"
     group: "{{ vpn_group | default('nogroup') }}"
     mode: '0755'
+    recurse: yes
