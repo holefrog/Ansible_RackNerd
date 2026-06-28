@@ -5,7 +5,7 @@
     src: xray.json.j2
     dest: /usr/local/etc/xray/config.json
     owner: "{{ vpn_user | default('nobody') }}"
-    group: "{{ vpn_user | default('nobody') }}"
+    group: "{{ vpn_group | default('nogroup') }}"
     mode: '0644'
   notify: Restart xray
 
