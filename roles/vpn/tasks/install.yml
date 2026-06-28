@@ -23,6 +23,19 @@
     (xray_force_upgrade | default(false)) or
     (xray_remote.json is defined and 'tag_name' in xray_remote.json and (xray_remote.json.tag_name | replace('v', '')) not in xray_local.stdout)
 
+- name: Create Xray group
+  ansible.builtin.group:
+    name: "{{ vpn_group | default('xray') }}"
+    system: true
+
+- name: Create Xray user
+  ansible.builtin.user:
+    name: "{{ vpn_user | default('xray') }}"
+    group: "{{ vpn_group | default('xray') }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
 - name: Create Xray log directory
   # 创建 Xray 运行日志存放目录，并设置正确的权限
   ansible.builtin.file:

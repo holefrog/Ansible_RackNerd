@@ -9,6 +9,22 @@
     mode: '0644'
   notify: Restart xray
 
+- name: Create systemd override directory for Xray
+  ansible.builtin.file:
+    path: /etc/systemd/system/xray.service.d
+    state: directory
+    mode: '0755'
+
+- name: Override Xray user and group in systemd
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/xray.service.d/override.conf
+    content: |
+      [Service]
+      User={{ vpn_user | default('nobody') }}
+      Group={{ vpn_group | default('nogroup') }}
+    mode: '0644'
+  notify: Restart xray
+
 - name: Start and enable Xray service
   # 确保 Xray 服务启动，并设置开机自启
   ansible.builtin.systemd:
