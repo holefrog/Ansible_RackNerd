@@ -29,5 +29,5 @@
     path: /var/log/xray
     state: directory
     owner: "{{ vpn_user | default('nobody') }}"
-    group: "{{ vpn_user | default('nobody') }}"
+    group: "{{ vpn_group | default('nogroup') }}"
     mode: '0755'
