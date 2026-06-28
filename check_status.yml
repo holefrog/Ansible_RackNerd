@@ -84,5 +84,5 @@
           - ""
           - "# --- 安全审计 ---"
           - "[SSH 22 端口] {% if ssh_22_check.failed is defined and ssh_22_check.failed %}🔒 已关闭 (安全){% else %}⚠️ 仍开启 (有风险){% endif %}"
-          - "{% if ssh_22_check.failed is not defined or not ssh_22_check.failed %}>>> 提示：请立即运行 ./close_22.sh 以加固服务器！{% endif %}"
+          - "{% if ssh_22_check.failed is not defined or not ssh_22_check.failed %}>>> 提示：请立即运行 ./close_22.sh 以加固服务器！{% else %}>>> 提示：默认端口已封禁，防线固若金汤！{% endif %}"
           - "===================================="
