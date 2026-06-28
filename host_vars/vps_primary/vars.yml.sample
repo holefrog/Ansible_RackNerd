@@ -18,6 +18,7 @@ email: "your-email@example.com"
 web_root: "/var/www/{{ domain }}"
 ssl_cert_dir: "/etc/letsencrypt/live"
 shared_data_dir: "/var/www/downloads"   # Aria2/WebDAV 共享存储路径
+xray_path_url: "xray_sec_dl"            # Xray 客户端配置下载的隐藏 URL 路径
 
 # --- 4. 服务运行用户 ---
 vpn_user: "nobody"                      # Xray 运行账户
