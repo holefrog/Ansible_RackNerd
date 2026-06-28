@@ -50,7 +50,7 @@
         line: '/swapfile none swap sw 0 0'
         state: present
 
-- name: Enable BBR kernel congestion control
+- name: Enable BBR kernel congestion control and optimize memory
   ansible.posix.sysctl:
     name: "{{ item.key }}"
     value: "{{ item.value }}"
@@ -58,6 +58,8 @@
   loop:
     - {key: 'net.core.default_qdisc', value: 'fq'}
     - {key: 'net.ipv4.tcp_congestion_control', value: 'bbr'}
+    - {key: 'vm.swappiness', value: '10'}
+    - {key: 'vm.vfs_cache_pressure', value: '50'}
 
 
 
