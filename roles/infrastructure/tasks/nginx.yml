@@ -107,6 +107,6 @@
 
 - name: Force activate Certbot auto-renewal timer
   ansible.builtin.systemd:
-    name: certbot-renew.timer
+    name: certbot.timer
     state: started
     enabled: true
