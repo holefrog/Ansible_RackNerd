@@ -131,6 +131,7 @@ test_config.ini
 # 本地开发脚本
 *.sh
 !deploy.sh
+!ansible.sh
 !remote_login.sh
 !git_push_all.sh
 
