@@ -33,7 +33,7 @@
         host: 127.0.0.1
         timeout: 1
       register: ssh_22_check
-      ignore_errors: true
+      failed_when: false
 
     - name: 获取所有关键服务的系统状态
       ansible.builtin.service_facts:
@@ -75,6 +75,6 @@
           - "[WebDAV文件] {% if webdav_check.status is defined and webdav_check.status in [401, 403, 200] %}✅ 运行中{% else %}❌ 异常 (连通性错误){% endif %}"
           - ""
           - "# --- 安全审计 ---"
-          - "[SSH 22 端口] {% if ssh_22_check.failed is defined and ssh_22_check.failed %}🔒 已关闭 (安全){% else %}⚠️ 仍开启 (有风险){% endif %}"
-          - "{% if ssh_22_check.failed is not defined or not ssh_22_check.failed %}>>> 提示：请立即运行 ./close_22.sh 以加固服务器！{% else %}>>> 提示：默认端口已封禁，防线固若金汤！{% endif %}"
+          - "[SSH 22 端口] {% if ssh_22_check.msg is defined and 'Timeout' in ssh_22_check.msg %}🔒 已关闭 (安全){% else %}⚠️ 仍开启 (有风险){% endif %}"
+          - "{% if ssh_22_check.msg is defined and 'Timeout' in ssh_22_check.msg %}>>> 提示：默认端口已封禁，防线固若金汤！{% else %}>>> 提示：请立即运行 ./close_22.sh 以加固服务器！{% endif %}"
           - "===================================="
