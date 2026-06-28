@@ -4,8 +4,8 @@
     name: nginx
     state: restarted
 
-- name: Restart dnf-automatic
+- name: Restart unattended-upgrades
   ansible.builtin.systemd:
-    name: dnf-automatic.timer
+    name: unattended-upgrades.service
     state: restarted
     enabled: true

@@ -49,7 +49,7 @@
           [Nginx 代理] {% if svc['nginx.service'] is defined and svc['nginx.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
           [Xray  节点] {% if svc['xray.service'] is defined and svc['xray.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
           [Aria2 下载] {% if svc['aria2.service'] is defined and svc['aria2.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
-          [Firewalld ] {% if svc['firewalld.service'] is defined and svc['firewalld.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
+          [UFW       ] {% if svc['ufw.service'] is defined and svc['ufw.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
           [Fail2ban  ] {% if svc['fail2ban.service'] is defined and svc['fail2ban.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
 
           # --- 虚拟路由服务 ---

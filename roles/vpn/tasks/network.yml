@@ -21,20 +21,10 @@
     mode: '0644'
   notify: Restart nginx
 
-- name: Block external access to Xray internal port in Firewalld (IPv4)
-  # 配合 SNI 分流架构，关闭外网直接访问内部端口 (如 10086)，仅允许本地转发
-  ansible.posix.firewalld:
-    rich_rule: 'rule family="ipv4" source not address="127.0.0.1" port port="{{ xray_internal_port }}" protocol="tcp" drop'
-    state: enabled
-    permanent: true
-    immediate: true
-  become: true
-
-- name: Block external access to Xray internal port in Firewalld (IPv6)
-  # 配合 SNI 分流架构，关闭 IPv6 外网直接访问内部端口，防止绕过
-  ansible.posix.firewalld:
-    rich_rule: 'rule family="ipv6" source not address="::1" port port="{{ xray_internal_port }}" protocol="tcp" drop'
-    state: enabled
-    permanent: true
-    immediate: true
+- name: Block external access to Xray internal port in UFW
+  # 配合 SNI 分流架构，明确拒绝外网直接访问内部端口 (如 10086)
+  community.general.ufw:
+    rule: deny
+    port: "{{ xray_internal_port | string }}"
+    proto: tcp
   become: true

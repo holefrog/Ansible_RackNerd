@@ -1,7 +1,7 @@
 ---
 # v6
 - name: Install Nginx and Certbot
-  ansible.builtin.dnf:
+  ansible.builtin.apt:
     name:
       - nginx
       - certbot

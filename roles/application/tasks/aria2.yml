@@ -1,6 +1,6 @@
 ---
 - name: 安装 Aria2
-  ansible.builtin.dnf:
+  ansible.builtin.apt:
     name: aria2
     state: present
 

@@ -2,14 +2,14 @@
 # roles/infrastructure/tasks/system.yml
 
 - name: Upgrade all system packages   # noqa: package-latest
-  ansible.builtin.dnf:
+  ansible.builtin.apt:
     name: "*"
     state: latest
     update_cache: true
 
 - name: Install basic maintenance tools
-  ansible.builtin.dnf:
-    name: [epel-release, jq, cronie, tar, wget, curl]
+  ansible.builtin.apt:
+    name: [jq, cron, tar, wget, curl]
     state: present
 
 # --- 核心改进：Swap 挂载状态检查逻辑 ---
@@ -64,18 +64,19 @@
   community.general.timezone:
     name: "{{ server_timezone }}"
 
-- name: Install dnf-automatic for system security
-  ansible.builtin.dnf:
-    name: dnf-automatic
+- name: Install unattended-upgrades for system security
+  ansible.builtin.apt:
+    name: [unattended-upgrades, apt-listchanges]
     state: present
 
 - name: Enable automatic security updates
-  ansible.builtin.lineinfile:
-    path: /etc/dnf/automatic.conf
-    regexp: '^apply_updates =.*'
-    line: 'apply_updates = yes'
-  # 修正：匹配首字母大写的 Handler
-  notify: Restart dnf-automatic
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+    mode: '0644'
+  notify: Restart unattended-upgrades
 
 - name: Deploy custom logrotate rules
   ansible.builtin.copy:

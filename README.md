@@ -64,7 +64,7 @@ graph TD
 ### 1. Security (安全壁垒)
 **职责**：系统开荒后的第一道防线。
 - **SSH 强化**：分发本机公钥，随后强行关闭密码登录，并利用执行脚本切断默认 22 端口暴露。
-- **Firewalld**：初始化系统防火墙，仅放行 SSH 和 443 端口，所有内部端口（如 10086, 6800, 4433）严格对公网隐身。
+- **UFW**：初始化系统防火墙，仅放行 SSH 和 443 端口，所有内部端口（如 10086, 6800, 4433）严格对公网隐身。
 - **Fail2ban**：自动封禁恶意爆破 SSH 的攻击者 IP。
 
 ### 2. Infrastructure (基础设施)
@@ -83,7 +83,7 @@ graph TD
 - **安装 (install.yml)**：幂等地调用官方脚本安装最新 Xray Core。
 - **密钥生成 (keys.yml)**：**亮点机制**。在服务器本地全自动生成并保存 UUID 及 X25519 Reality 公私钥，附带损坏自愈修复功能。
 - **服务端启停 (server.yml)**：渲染服务端配置并自启。
-- **网络集成 (network.yml)**：向 Nginx 注入 Xray 的回源分流配置，并在 Firewalld 中添加富规则 (Rich Rule) 彻底封死 10086 的公网暴露面。
+- **网络集成 (network.yml)**：向 Nginx 注入 Xray 的回源分流配置，并在 UFW 中添加规则彻底封死 10086 的公网暴露面。
 - **客户端凭证下发 (client.yml)**：自动生成标准 `config.json` 配置、`vless://` 链接，并调用 `qrencode` 渲染二维码 (PNG)，支持直接扫码导入手机。
 
 ## 五、 运维与健康监控 (check_status.yml)
@@ -92,7 +92,7 @@ graph TD
 运行 `ansible-playbook check_status.yml` 即可获取。
 
 通过探测内部端口及 HTTPS 协议响应，它真实反馈：
-1. **系统进程 (Systemd)**: Nginx, Xray, Aria2, Firewalld, Fail2ban 的底层运行状态。
+1. **系统进程 (Systemd)**: Nginx, Xray, Aria2, UFW, Fail2ban 的底层运行状态。
 2. **路由连通性**: Nginx 内部的 WebDAV 是否能正常响应访问。
 3. **安全审计**: SSH 22 端口是否已被彻底屏蔽。
 4. **资源占用**: 物理内存 Swap 的开启状况及物理硬盘剩余空间。
