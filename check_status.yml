@@ -46,6 +46,12 @@
     - name: 获取所有关键服务的系统状态
       ansible.builtin.service_facts:
 
+    - name: 获取 UFW 真实运行状态
+      ansible.builtin.command: ufw status
+      register: ufw_status
+      changed_when: false
+      ignore_errors: true
+
     - name: 探测 WebDAV 路由连通性
       ansible.builtin.uri:
         url: "https://127.0.0.1:4433/webdav/"
@@ -70,7 +76,7 @@
           [Nginx 代理] {% if svc['nginx.service'] is defined and svc['nginx.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
           [Xray  节点] {% if svc['xray.service'] is defined and svc['xray.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
           [Aria2 下载] {% if svc['aria2.service'] is defined and svc['aria2.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
-          [UFW       ] {% if svc['ufw.service'] is defined and svc['ufw.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
+          [UFW  防火墙] {% if ufw_status.stdout is defined and 'Status: active' in ufw_status.stdout %}✅ 运行中{% else %}❌ 异常{% endif %}
           [Fail2ban  ] {% if svc['fail2ban.service'] is defined and svc['fail2ban.service'].state == 'running' %}✅ 运行中{% else %}❌ 异常{% endif %}
 
           # --- 虚拟路由服务 ---
