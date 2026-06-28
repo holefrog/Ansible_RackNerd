@@ -87,7 +87,8 @@ if [[ "$MODE" == "Deploy" ]]; then
             echo ">>> 清理本地 known_hosts 中的旧密钥记录..."
             ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$actual_host" >/dev/null 2>&1 || true
             echo ">>> 执行 ssh-copy-id -i ${KEY}.pub ${target_host}"
-            ssh-copy-id -o StrictHostKeyChecking=no -i "${KEY}.pub" "$target_host"
+            # 加入 -o IdentitiesOnly=yes 和 -o PubkeyAuthentication=no 彻底解决 Too many authentication failures
+            ssh-copy-id -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PubkeyAuthentication=no -i "${KEY}.pub" "$target_host"
         else
             echo "未提取到默认目标，且未输入目标，跳过。"
         fi
