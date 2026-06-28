@@ -6,11 +6,8 @@
   
   pre_tasks:
     - name: 智能探测目标主机的自定义 SSH 端口 (防 22 端口死锁)
-      ansible.builtin.wait_for:
-        host: "{{ ansible_host }}"
-        port: "{{ ssh_port }}"
-        timeout: 3
-        state: started
+      ansible.builtin.command:
+        cmd: "ssh {% if ansible_ssh_private_key_file is defined %}-i {{ ansible_ssh_private_key_file }}{% endif %} -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no -p {{ ssh_port }} {{ ansible_user }}@{{ ansible_host }} 'echo ok'"
       delegate_to: localhost
       register: custom_port_check
       failed_when: false
@@ -19,7 +16,7 @@
 
     - name: 动态设置实际连接端口 (根据探测结果 fallback 到 22)
       ansible.builtin.set_fact:
-        ansible_port: "{% if 'Timeout' not in custom_port_check.msg | default('') %}{{ ssh_port }}{% else %}22{% endif %}"
+        ansible_port: "{% if custom_port_check.rc == 0 %}{{ ssh_port }}{% else %}22{% endif %}"
 
     - name: Gather facts after port is resolved
       ansible.builtin.setup:

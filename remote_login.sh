@@ -73,8 +73,9 @@ fi
 
 echo -e "${GREEN}>>> 正在连接 $TARGET_HOST [$HOST] (端口: $PORT)...${NC}"
 
-# 清理指纹
+# 清理指纹 (同时清理默认端口和自定义端口的记录)
 ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$HOST" >/dev/null 2>&1 || true
+ssh-keygen -f "$HOME/.ssh/known_hosts" -R "[$HOST]:$PORT" >/dev/null 2>&1 || true
 
 # 激活配色并登入
 echo -ne "\e]10;#39FF14\a\e]11;#000000\a"
