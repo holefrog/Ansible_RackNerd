@@ -48,18 +48,22 @@ echo ""
 
 # 仅在部署时提示是否处理 SSH 密钥
 if [[ "$MODE" == "Deploy" ]]; then
-    # RackNerd 默认使用主机的 key，我们直接指向主机的 private key
-    KEY="${SCRIPT_DIR}/keys/vps_primary_key"
+    # 动态从 vars.yml 提取私钥路径，消除硬编码
+    KEY_REL_PATH=$(awk '/^ansible_ssh_private_key_file:/ {print $2; exit}' host_vars/*/vars.yml 2>/dev/null | tr -d '"'\''')
+    if [[ -z "$KEY_REL_PATH" ]]; then
+        KEY_REL_PATH="keys/id_ed25519"
+    fi
+    KEY="${SCRIPT_DIR}/${KEY_REL_PATH}"
     
     if [[ ! -f "$KEY" ]]; then
         echo "⚠️ 未找到 SSH 私钥: ${KEY}"
         read -rp "是否自动生成新的 SSH 密钥？[y/N]: " gen_key
         if [[ "$gen_key" =~ ^[Yy]$ ]]; then
-            mkdir -p "${SCRIPT_DIR}/keys"
+            mkdir -p "$(dirname "$KEY")"
             ssh-keygen -t ed25519 -f "$KEY" -N ""
             echo "✅ 密钥已生成。"
         else
-            echo "❌ 请先生成密钥并放入 keys/ 目录 (例如: ssh-keygen -t ed25519 -f ./keys/vps_primary_key)"
+            echo "❌ 请先生成密钥并放入正确目录 (例如: ssh-keygen -t ed25519 -f ./${KEY_REL_PATH})"
             exit 1
         fi
     fi
