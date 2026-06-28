@@ -2,7 +2,28 @@
 - name: 🔍 VPS 资源与业务健康看板
   hosts: racknerd
   become: true
-  gather_facts: yes
+  gather_facts: false
+  
+  pre_tasks:
+    - name: 智能探测目标主机的自定义 SSH 端口 (防 22 端口死锁)
+      ansible.builtin.wait_for:
+        host: "{{ ansible_host }}"
+        port: "{{ ssh_port }}"
+        timeout: 3
+        state: started
+      delegate_to: localhost
+      register: custom_port_check
+      ignore_errors: true
+      changed_when: false
+      check_mode: false
+
+    - name: 动态设置实际连接端口 (根据探测结果 fallback 到 22)
+      ansible.builtin.set_fact:
+        ansible_port: "{% if custom_port_check is success %}{{ ssh_port }}{% else %}22{% endif %}"
+
+    - name: Gather facts after port is resolved
+      ansible.builtin.setup:
+
   tasks:
     - name: 检查内部服务回环监听
       ansible.builtin.wait_for:
