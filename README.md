@@ -100,3 +100,45 @@ graph TD
 2. **路由连通性**: Nginx 内部的 WebDAV 是否能正常响应访问。
 3. **安全审计**: SSH 22 端口是否已被彻底屏蔽。
 4. **资源占用**: 物理内存 Swap 的开启状况及物理硬盘剩余空间。
+
+## 六、 故障排查手册
+
+### REALITY 握手失败：CDN 共享基础设施导致证书域名不匹配
+
+**现象**：手机客户端能连接服务器，但无法上网。服务端日志报出：
+
+```
+REALITY: processed invalid connection: server name mismatch: www.microsoft.com
+```
+
+客户端日志报出：
+
+```
+x509: certificate is valid for images.apple.com, www.apple.com, not www.microsoft.com
+```
+
+**根因**：`www.microsoft.com` 使用了 Akamai CDN。当 Xray REALITY 协议向 `dest` 目标（`www.microsoft.com:443`）请求真实证书时，VPS 所在机房对应的 Akamai 边缘节点同时为 Microsoft 和 Apple 等多家客户提供服务。由于 CDN 共享 IP 的机制，该边缘节点在特定时段可能返回其上部署的其他客户（如 Apple）的证书，导致证书中的域名与 SNI 请求的 `www.microsoft.com` 不一致，REALITY TLS 握手失败。
+
+```
+www.microsoft.com ──DNS──▶ e13678.dscb.akamaiedge.net (23.220.200.101)
+www.apple.com     ──DNS──▶ 同一 Akamai 边缘节点集群
+                            ↑ 共享 IP，证书选择可能出错
+```
+
+**解决方案**：
+
+1. 将 `dest`/`serverNames` 更换为证书稳定的域名。选择标准：
+   - ✅ 支持 TLS 1.3
+   - ✅ 证书域名与 SNI 严格匹配（可通过 `openssl s_client` 从 VPS 验证）
+   - ✅ 不被 GFW 封锁，且为正常外网流量
+   - ⚠️ 避免大型共享 CDN 上证书行为不稳定的域名
+
+2. 域名已通过 `xray_reality_sni` 变量统一管理（定义于 `host_vars/<主机名>/vars.yml`），修改一处即可同步更新 Xray 服务端、Nginx SNI 分流、客户端配置及分享链接。
+
+**验证方法**：从 VPS 上验证候选域名的证书是否稳定匹配：
+
+```bash
+echo | openssl s_client -connect <候选域名>:443 -servername <候选域名> 2>/dev/null \
+  | openssl x509 -noout -subject -text | grep -E 'Subject:|DNS:'
+```
+
