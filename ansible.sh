@@ -69,29 +69,12 @@ if [[ "$MODE" == "Deploy" ]]; then
     fi
     chmod 400 "$KEY"
 
-    # 从 hosts.yml 中自动提取第一个主机的 IP 作为默认目标
+    # 自动清理本地 known_hosts 中的旧密钥记录，防止用户未来手动 ssh 时遇到指纹冲突报错
     INV="hosts.yml"
     DEFAULT_HOST=$(awk '/^[ \t]*[a-zA-Z0-9_-]+:[ \t]*$/ {in_host=1; next} in_host && /^[ \t]*ansible_host:/ {print $2; exit}' "$INV" | tr -d '"'\''')
-    
-    # 提示是否分发公钥
-    read -rp "是否需要将公钥复制到目标 VPS (ssh-copy-id)？[y/N]: " copy_key
-    if [[ "$copy_key" =~ ^[Yy]$ ]]; then
-        read -rp "请输入目标 VPS 登录地址 (直接回车默认 root@${DEFAULT_HOST}): " target_host
-        if [[ -z "$target_host" && -n "$DEFAULT_HOST" ]]; then
-            target_host="root@${DEFAULT_HOST}"
-        fi
-        
-        if [[ -n "$target_host" ]]; then
-            # 提取目标 IP (处理包含 user@ 的情况)
-            actual_host="${target_host#*@}"
-            echo ">>> 清理本地 known_hosts 中的旧密钥记录..."
-            ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$actual_host" >/dev/null 2>&1 || true
-            echo ">>> 执行 ssh-copy-id -i ${KEY}.pub ${target_host}"
-            # 加入 -o IdentitiesOnly=yes 和 -o PubkeyAuthentication=no 彻底解决 Too many authentication failures
-            ssh-copy-id -o StrictHostKeyChecking=no -o IdentitiesOnly=yes -o PubkeyAuthentication=no -i "${KEY}.pub" "$target_host"
-        else
-            echo "未提取到默认目标，且未输入目标，跳过。"
-        fi
+    if [[ -n "$DEFAULT_HOST" ]]; then
+        echo ">>> 正在清理本地 known_hosts 旧指纹记录 (为 Ansible 自动化公钥分发铺路)..."
+        ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$DEFAULT_HOST" >/dev/null 2>&1 || true
         echo ""
     fi
 fi
