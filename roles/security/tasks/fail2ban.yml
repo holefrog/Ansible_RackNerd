@@ -1,7 +1,7 @@
 ---
 - name: Install Fail2ban and systemd support
-  ansible.builtin.dnf:
-    name: [fail2ban, fail2ban-systemd]
+  ansible.builtin.apt:
+    name: fail2ban
     state: present
 
 - name: Deploy Fail2ban jail.local configuration from template
