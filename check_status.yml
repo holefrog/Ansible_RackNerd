@@ -13,13 +13,13 @@
         state: started
       delegate_to: localhost
       register: custom_port_check
-      ignore_errors: true
+      failed_when: false
       changed_when: false
       check_mode: false
 
     - name: 动态设置实际连接端口 (根据探测结果 fallback 到 22)
       ansible.builtin.set_fact:
-        ansible_port: "{% if custom_port_check is success %}{{ ssh_port }}{% else %}22{% endif %}"
+        ansible_port: "{% if 'Timeout' not in custom_port_check.msg | default('') %}{{ ssh_port }}{% else %}22{% endif %}"
 
     - name: Gather facts after port is resolved
       ansible.builtin.setup:
