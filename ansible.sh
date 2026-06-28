@@ -69,9 +69,17 @@ if [[ "$MODE" == "Deploy" ]]; then
     fi
     chmod 400 "$KEY"
 
+    # 从 hosts.yml 中自动提取第一个主机的 IP 作为默认目标
+    DEFAULT_HOST=$(awk '/^[ \t]*[a-zA-Z0-9_-]+:[ \t]*$/ {in_host=1; next} in_host && /^[ \t]*ansible_host:/ {print $2; exit}' "$INV" | tr -d '"'\''')
+    
+    # 提示是否分发公钥
     read -rp "是否需要将公钥复制到目标 VPS (ssh-copy-id)？[y/N]: " copy_key
     if [[ "$copy_key" =~ ^[Yy]$ ]]; then
-        read -rp "请输入目标 VPS 登录地址 (例如 root@192.227.234.149): " target_host
+        read -rp "请输入目标 VPS 登录地址 (直接回车默认 root@${DEFAULT_HOST}): " target_host
+        if [[ -z "$target_host" && -n "$DEFAULT_HOST" ]]; then
+            target_host="root@${DEFAULT_HOST}"
+        fi
+        
         if [[ -n "$target_host" ]]; then
             # 提取目标 IP (处理包含 user@ 的情况)
             actual_host="${target_host#*@}"
@@ -80,7 +88,7 @@ if [[ "$MODE" == "Deploy" ]]; then
             echo ">>> 执行 ssh-copy-id -i ${KEY}.pub ${target_host}"
             ssh-copy-id -o StrictHostKeyChecking=no -i "${KEY}.pub" "$target_host"
         else
-            echo "未输入目标，跳过。"
+            echo "未提取到默认目标，且未输入目标，跳过。"
         fi
         echo ""
     fi
