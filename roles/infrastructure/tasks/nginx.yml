@@ -56,6 +56,14 @@
     mode: '0644'
   notify: Restart nginx
 
+- name: Ensure shared data directory exists
+  ansible.builtin.file:
+    path: "{{ shared_data_dir }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ web_user | default('www-data') }}"
+    group: "{{ web_user | default('www-data') }}"
+
 - name: Deploy robots.txt
   ansible.builtin.template:
     src: robots.txt.j2
