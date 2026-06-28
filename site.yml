@@ -18,6 +18,7 @@
       register: custom_port_check
       ignore_errors: true
       changed_when: false
+      check_mode: false
 
     - name: 动态设置实际连接端口 (根据探测结果 fallback 到 22)
       ansible.builtin.set_fact:
