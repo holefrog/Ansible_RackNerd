@@ -4,3 +4,8 @@
     name: aria2
     state: restarted
     daemon_reload: true
+
+- name: 重启 yattee-server
+  ansible.builtin.shell:
+    cmd: docker compose up -d --build
+    chdir: "{{ yattee_install_dir }}"

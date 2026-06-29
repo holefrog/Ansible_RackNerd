@@ -1,0 +1,11 @@
+# v1 - Ansible 托管，勿手动修改
+location /yattee/ {
+    proxy_pass http://127.0.0.1:{{ yattee_internal_port }}/;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header Connection "";
+    proxy_buffering off;
+    proxy_read_timeout 300s;
+    client_max_body_size 100M;
+}

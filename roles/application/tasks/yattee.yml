@@ -1,0 +1,52 @@
+---
+# v1
+- name: 安装 git
+  ansible.builtin.apt:
+    name: git
+    state: present
+
+- name: Clone yattee-server 源码
+  ansible.builtin.git:
+    repo: https://github.com/yattee/yattee-server.git
+    dest: "{{ yattee_install_dir }}"
+    update: true
+
+- name: 渲染 yattee-server 环境变量文件
+  ansible.builtin.template:
+    src: yattee.env.j2
+    dest: "{{ yattee_install_dir }}/.env"
+    mode: '0600'
+  notify: 重启 yattee-server
+
+- name: 启动 yattee-server 容器
+  ansible.builtin.shell:
+    cmd: docker compose up -d --build
+    chdir: "{{ yattee_install_dir }}"
+  register: yattee_compose_result
+  changed_when: "'Started' in yattee_compose_result.stdout or 'Recreated' in yattee_compose_result.stdout"
+
+- name: 部署 yattee Nginx location 配置
+  ansible.builtin.template:
+    src: nginx-yattee.conf.j2
+    dest: "/etc/nginx/conf.d/{{ domain }}.locations.d/yattee.conf"
+    mode: '0644'
+  notify: Restart nginx
+
+- name: 部署 yattee-update systemd service
+  ansible.builtin.template:
+    src: yattee-update.service.j2
+    dest: /etc/systemd/system/yattee-update.service
+    mode: '0644'
+
+- name: 部署 yattee-update systemd timer
+  ansible.builtin.template:
+    src: yattee-update.timer.j2
+    dest: /etc/systemd/system/yattee-update.timer
+    mode: '0644'
+
+- name: 启动并启用 yattee-update timer
+  ansible.builtin.systemd:
+    name: yattee-update.timer
+    state: started
+    enabled: true
+    daemon_reload: true
