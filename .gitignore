@@ -21,6 +21,8 @@ secrets*
 *.secret
 *.credential
 
+cookies.txt
+
 # 网站配置
 hosts.yml
 vars.yml
@@ -141,3 +143,4 @@ test_config.ini
 !lib/
 !lib/constants.sh
 !lib/local_utils.sh
+
