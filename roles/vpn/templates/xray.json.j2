@@ -12,7 +12,7 @@
       "settings": {
         "clients": [
           {
-            "id": "{{ xray_keys.uuid }}",
+            "id": "{{ vpn_xray_keys.uuid }}",
             "flow": "xtls-rprx-vision"
           }
         ],
@@ -28,9 +28,9 @@
           "serverNames": [
             "{{ xray_reality_sni }}"
           ],
-          "privateKey": "{{ xray_keys.private_key }}",
+          "privateKey": "{{ vpn_xray_keys.private_key }}",
           "shortIds": [
-            "{{ xray_keys.short_id }}"
+            "{{ vpn_xray_keys.short_id }}"
           ]
         }
       }

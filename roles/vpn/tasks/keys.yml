@@ -3,12 +3,14 @@
   # 检查当前服务器上是否已经存在之前生成的 Reality 密钥文件
   ansible.builtin.stat:
     path: /usr/local/etc/xray/reality.json
-  register: reality_keys_file
+  register: vpn_reality_keys_file
 
 - name: Verify existing Reality keys are valid
   # 验证已存在的密钥文件是否合法完整。如果由于意外导致 private_key 为空，该步骤会报错并捕获
-  ansible.builtin.command: python3 -c "import json, sys; d=json.load(open('/usr/local/etc/xray/reality.json')); sys.exit(0 if d.get('private_key') and d.get('public_key') else 1)"
-  register: verify_keys
+  ansible.builtin.command: >
+    python3 -c "import json, sys; d=json.load(open('/usr/local/etc/xray/reality.json'));
+    sys.exit(0 if d.get('private_key') and d.get('public_key') else 1)"
+  register: vpn_verify_keys
   ignore_errors: true
   changed_when: false
   when: reality_keys_file.stat.exists
@@ -18,17 +20,18 @@
   ansible.builtin.file:
     path: /usr/local/etc/xray/reality.json
     state: absent
-  when: reality_keys_file.stat.exists and verify_keys.rc != 0
+  when: vpn_reality_keys_file.stat.exists and vpn_verify_keys.rc != 0
 
 - name: Re-check Reality keys status after cleanup
   # 重新获取文件状态，以便后续任务判断是否需要执行生成操作
   ansible.builtin.stat:
     path: /usr/local/etc/xray/reality.json
-  register: reality_keys_file
+  register: vpn_reality_keys_file
 
 - name: Generate Reality keys and UUID
   # 生成全新的 Reality 配置要素：UUID、X25519 公私钥对、ShortID
   ansible.builtin.shell: |
+    set -o pipefail
     UUID=$(/usr/local/bin/xray uuid 2>&1)
     KEYS=$(/usr/local/bin/xray x25519 2>&1)
     PRI_KEY=$(echo "$KEYS" | grep -i "PrivateKey" | awk '{print $NF}')
@@ -51,20 +54,25 @@
     EOF
 
     # Verify the newly generated JSON file
-    python3 -c "import json, sys; d=json.load(open('/usr/local/etc/xray/reality.json')); sys.exit(0 if d.get('private_key') and d.get('public_key') else 1)" || {
+    python3 -c "import json, sys; d=json.load(open('/usr/local/etc/xray/reality.json')); sys.exit(0 if d.get('private_key') and d.get('public_key') else 1)" \
+    || {
       echo "Error: Generated JSON is invalid or incomplete." >&2
       rm -f /usr/local/etc/xray/reality.json
       exit 1
     }
-  when: not reality_keys_file.stat.exists
+  args:
+    executable: /bin/bash
+  register: _vpn_keys_cmd
+  changed_when: _vpn_keys_cmd.rc == 0
+  when: not vpn_reality_keys_file.stat.exists
 
 - name: Load Reality keys into Ansible variables
   # 读取本机上的 JSON 文件，将其内容提取到 Ansible 运行环境中
   ansible.builtin.slurp:
     src: /usr/local/etc/xray/reality.json
-  register: reality_keys_raw
+  register: vpn_reality_keys_raw
 
 - name: Parse Reality keys
   # 将提取到的 base64 字符串解码，并解析为 Ansible 的字典变量 (xray_keys)
   ansible.builtin.set_fact:
-    xray_keys: "{{ reality_keys_raw.content | b64decode | from_json }}"
+    vpn_xray_keys: "{{ vpn_reality_keys_raw.content | b64decode | from_json }}"

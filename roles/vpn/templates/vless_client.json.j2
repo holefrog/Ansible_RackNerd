@@ -7,7 +7,7 @@
       "vnext": [{
         "address": "{{ domain }}",
         "port": 443,
-        "users": [{"id": "{{ xray_keys.uuid }}", "encryption": "none", "flow": "xtls-rprx-vision"}]
+        "users": [{"id": "{{ vpn_xray_keys.uuid }}", "encryption": "none", "flow": "xtls-rprx-vision"}]
       }]
     },
     "streamSettings": {
@@ -16,8 +16,8 @@
       "realitySettings": {
         "serverName": "{{ xray_reality_sni }}",
         "fingerprint": "chrome",
-        "publicKey": "{{ xray_keys.public_key }}",
-        "shortId": "{{ xray_keys.short_id }}",
+        "publicKey": "{{ vpn_xray_keys.public_key }}",
+        "shortId": "{{ vpn_xray_keys.short_id }}",
         "spiderX": ""
       }
     }

@@ -27,7 +27,7 @@
     - name: Ensure Python 3 APT bindings are installed (fixes old Python issue on target)
       ansible.builtin.raw: "apt-get update && apt-get install -y python3-apt || true"
       changed_when: false
-      ignore_errors: true
+      failed_when: false
 
     # 【⚠️ 核心架构警告】：切勿删除此手动 setup 任务！
     # 因为我们在顶部禁用了默认的 gather_facts，所以必须在 python 基础环境准备好之后，

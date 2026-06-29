@@ -6,6 +6,7 @@
     daemon_reload: true
 
 - name: 重启 yattee-server
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: docker compose up -d --build
     chdir: "{{ yattee_install_dir }}"
+  changed_when: false

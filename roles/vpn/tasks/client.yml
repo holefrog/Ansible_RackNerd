@@ -33,7 +33,7 @@
     owner: "{{ web_user }}"
     group: "{{ web_user }}"
     mode: '0644'
-  register: xray_link_file
+  register: vpn_xray_link_file
 
 - name: Ensure qrencode is installed
   # 安装二维码生成工具
@@ -44,7 +44,7 @@
 - name: Check if QR code already exists
   ansible.builtin.stat:
     path: "{{ web_root }}/{{ xray_path_url }}/xray_qr.png"
-  register: qr_stat
+  register: vpn_qr_stat
 
 - name: Convert subscription link to QR code PNG
   # 如果订阅链接有变动，或者二维码图片丢失，则重新将链接文本转换为二维码图片
@@ -54,7 +54,9 @@
     echo -n "$VLESS_LINK" | qrencode -o {{ web_root }}/{{ xray_path_url }}/xray_qr.png -s 10
   args:
     executable: /bin/bash
-  when: xray_link_file.changed or not qr_stat.stat.exists
+  register: _vpn_qr_cmd
+  changed_when: _vpn_qr_cmd.rc == 0
+  when: vpn_xray_link_file.changed or not vpn_qr_stat.stat.exists
 
 - name: Adjust permissions of generated files
   # 确保生成的二维码文件具有正确的读取权限，以便 Nginx web 服务器下发
@@ -63,4 +65,4 @@
     owner: "{{ web_user }}"
     group: "{{ web_user }}"
     mode: '0644'
-  when: xray_link_file.changed or not qr_stat.stat.exists
+  when: vpn_xray_link_file.changed or not vpn_qr_stat.stat.exists

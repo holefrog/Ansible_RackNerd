@@ -5,7 +5,7 @@
     name: git
     state: present
 
-- name: Clone yattee-server 源码
+- name: Clone yattee-server 源码  # noqa: latest[git]
   ansible.builtin.git:
     repo: https://github.com/yattee/yattee-server.git
     dest: "{{ yattee_install_dir }}"
@@ -19,11 +19,11 @@
   notify: 重启 yattee-server
 
 - name: 启动 yattee-server 容器
-  ansible.builtin.shell:
+  ansible.builtin.command:
     cmd: docker compose up -d --build
     chdir: "{{ yattee_install_dir }}"
-  register: yattee_compose_result
-  changed_when: "'Started' in yattee_compose_result.stdout or 'Recreated' in yattee_compose_result.stdout"
+  register: application_yattee_compose_result
+  changed_when: "'Started' in application_yattee_compose_result.stdout or 'Recreated' in application_yattee_compose_result.stdout"
 
 - name: 部署 yattee Nginx location 配置
   ansible.builtin.template:

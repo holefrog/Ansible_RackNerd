@@ -16,11 +16,11 @@
 # --- 核心改进：Swap 挂载状态检查逻辑 ---
 - name: Check if Swap is already active
   ansible.builtin.command: swapon --show
-  register: swapon_output
+  register: infrastructure_swapon_output
   changed_when: false
 
 - name: Configure 2GB Swap virtual memory
-  when: "'/swapfile' not in swapon_output.stdout"
+  when: "'/swapfile' not in infrastructure_swapon_output.stdout"
   block:
     - name: Create swap file
       ansible.builtin.command:
@@ -61,8 +61,6 @@
     - {key: 'vm.swappiness', value: '10'}
     - {key: 'vm.vfs_cache_pressure', value: '50'}
 
-
-
 - name: Set system timezone
   community.general.timezone:
     name: "{{ server_timezone }}"
@@ -99,7 +97,7 @@
     mode: '0644'
 
 - name: 全局配置自定义别名
-  copy:
+  ansible.builtin.copy:
     dest: /etc/profile.d/custom_aliases.sh
     content: |
       alias ll='ls -l -tr'

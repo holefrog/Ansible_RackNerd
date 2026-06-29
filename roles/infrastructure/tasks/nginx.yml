@@ -7,14 +7,14 @@
 
 - name: Get Nginx compile parameters
   ansible.builtin.command: nginx -V
-  register: nginx_v_info
+  register: infrastructure_nginx_v_info
   changed_when: false
 
 - name: Verify http_addition_module support
   ansible.builtin.assert:
     that: >
-      'with-http_addition_module' in nginx_v_info.stderr or
-      'with-http_addition_module' in nginx_v_info.stdout
+      'with-http_addition_module' in infrastructure_nginx_v_info.stderr or
+      'with-http_addition_module' in infrastructure_nginx_v_info.stdout
     fail_msg: "错误：当前 Nginx 不支持 add_after_body 模块。"
   ignore_errors: "{{ ansible_check_mode }}"
 
@@ -22,12 +22,12 @@
 - name: Check if SSL certificate exists
   ansible.builtin.stat:
     path: "{{ ssl_cert_dir }}/{{ domain }}/fullchain.pem"
-  register: cert_file
+  register: infrastructure_cert_file
 
 # 移除了手动的 systemd 状态检查和停止任务，交由 Certbot 的 pre-hook 处理
 
 - name: Request SSL certificate via Certbot standalone
-  when: not cert_file.stat.exists
+  when: not infrastructure_cert_file.stat.exists
   block:
     - name: Run Certbot
       ansible.builtin.shell: |
@@ -35,8 +35,8 @@
         --non-interactive --agree-tos --email {{ email }} \
         --pre-hook "systemctl stop nginx" \
         --post-hook "systemctl start nginx"
-      register: certbot_result
-      changed_when: certbot_result.rc == 0
+      register: infrastructure_certbot_result
+      changed_when: infrastructure_certbot_result.rc == 0
   rescue:
     - name: Certbot failed - restart Nginx to restore service
       ansible.builtin.systemd:

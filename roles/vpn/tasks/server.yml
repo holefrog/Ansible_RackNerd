@@ -1,6 +1,6 @@
 ---
 - name: Render Xray server configuration
-  # 根据提取到的密钥变量 (xray_keys) 渲染最终的 Xray 服务端配置文件
+  # 根据提取到的密钥变量 (vpn_xray_keys) 渲染最终的 Xray 服务端配置文件
   ansible.builtin.template:
     src: xray.json.j2
     dest: /usr/local/etc/xray/config.json

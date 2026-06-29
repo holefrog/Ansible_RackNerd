@@ -2,7 +2,7 @@
 - name: Check local Xray version
   # 检查本地是否已安装 Xray，并获取当前版本号输出
   ansible.builtin.command: /usr/local/bin/xray version
-  register: xray_local
+  register: vpn_xray_local
   ignore_errors: true
   changed_when: false
 
@@ -11,17 +11,19 @@
   ansible.builtin.uri:
     url: https://api.github.com/repos/XTLS/Xray-core/releases/latest
     return_content: true
-  register: xray_remote
-  when: xray_local.rc == 0 and not (xray_force_upgrade | default(false))
+  register: vpn_xray_remote
+  when: vpn_xray_local.rc == 0 and not (xray_force_upgrade | default(false))
   ignore_errors: true
 
 - name: Install and deploy Xray using official script
   # 真正实现声明式幂等：仅在未安装、版本落后或明确指定强制升级时，才执行安装脚本
   ansible.builtin.shell: bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install
+  register: _vpn_xray_install_cmd
+  changed_when: _vpn_xray_install_cmd.rc == 0
   when: >
-    xray_local.rc != 0 or
+    vpn_xray_local.rc != 0 or
     (xray_force_upgrade | default(false)) or
-    (xray_remote.json is defined and 'tag_name' in xray_remote.json and (xray_remote.json.tag_name | replace('v', '')) not in xray_local.stdout)
+    (vpn_xray_remote.json is defined and 'tag_name' in vpn_xray_remote.json and (vpn_xray_remote.json.tag_name | replace('v', '')) not in vpn_xray_local.stdout)
 
 - name: Create Xray group
   ansible.builtin.group:
@@ -44,4 +46,4 @@
     owner: "{{ vpn_user | default('nobody') }}"
     group: "{{ vpn_group | default('nogroup') }}"
     mode: '0755'
-    recurse: yes
+    recurse: true
