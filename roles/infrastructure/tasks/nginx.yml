@@ -9,14 +9,18 @@
   ansible.builtin.command: nginx -V
   register: infrastructure_nginx_v_info
   changed_when: false
-
-- name: Verify http_addition_module support
-  ansible.builtin.assert:
-    that: >
-      'with-http_addition_module' in infrastructure_nginx_v_info.stderr or
-      'with-http_addition_module' in infrastructure_nginx_v_info.stdout
-    fail_msg: "错误：当前 Nginx 不支持 add_after_body 模块。"
   ignore_errors: "{{ ansible_check_mode }}"
+
+- name: Automatically install nginx-full if http_addition_module is missing
+  ansible.builtin.package:
+    name: nginx-full
+    state: present
+  when: >
+    not ansible_check_mode and
+    ansible_os_family == 'Debian' and
+    infrastructure_nginx_v_info.rc is defined and infrastructure_nginx_v_info.rc == 0 and
+    'with-http_addition_module' not in (infrastructure_nginx_v_info.stderr | default('')) and
+    'with-http_addition_module' not in (infrastructure_nginx_v_info.stdout | default(''))
 
 # --- 证书申请（仅首次）---
 - name: Check if SSL certificate exists
