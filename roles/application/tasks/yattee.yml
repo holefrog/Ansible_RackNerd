@@ -30,7 +30,7 @@
     src: nginx-yattee.conf.j2
     dest: "/etc/nginx/conf.d/{{ domain }}.locations.d/yattee.conf"
     mode: '0644'
-  notify: Restart nginx
+  notify: Reload nginx
 
 - name: 部署 yattee-update systemd service
   ansible.builtin.template:

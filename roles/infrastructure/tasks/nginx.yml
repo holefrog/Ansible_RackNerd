@@ -56,7 +56,7 @@
     src: site.conf.j2
     dest: /etc/nginx/conf.d/{{ domain }}.conf
     mode: '0644'
-  notify: Restart nginx
+  notify: Reload nginx
 
 - name: Ensure shared data directory exists
   ansible.builtin.file:
@@ -93,7 +93,7 @@
       stream {
           include /etc/nginx/stream.conf.d/*.conf;
       }
-  notify: Restart nginx
+  notify: Reload nginx
 
 # --- 统一启动 ---
 - name: Flush handlers before starting Nginx

@@ -13,7 +13,7 @@
     mode: '0640'
     owner: "{{ web_user }}"
   # 修正：匹配首字母大写的 Handler
-  notify: Restart nginx
+  notify: Reload nginx
 
 - name: Deploy WebDAV footer functionality script
   ansible.builtin.template:
@@ -27,4 +27,4 @@
     src: nginx-webdav.conf.j2
     dest: "/etc/nginx/conf.d/{{ domain }}.locations.d/webdav.conf"
     mode: '0644'
-  notify: Restart nginx
+  notify: Reload nginx

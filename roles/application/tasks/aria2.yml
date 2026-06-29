@@ -25,7 +25,7 @@
     src: nginx-aria2.conf.j2
     dest: "/etc/nginx/conf.d/{{ domain }}.locations.d/aria2.conf"
     mode: '0644'
-  notify: Restart nginx
+  notify: Reload nginx
 
 - name: 部署 Systemd 服务 (使用非 root 用户降权)
   ansible.builtin.template:

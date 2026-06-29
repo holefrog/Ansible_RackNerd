@@ -11,7 +11,7 @@
     src: nginx-xray.conf.j2
     dest: "/etc/nginx/conf.d/{{ domain }}.locations.d/xray.conf"
     mode: '0644'
-  notify: Restart nginx
+  notify: Reload nginx
 
 - name: Deploy Xray SNI stream routing configuration
   # 将去除了外层 stream {} 的 SNI 分流配置放入独立目录
@@ -19,7 +19,7 @@
     src: nginx-stream-sni.conf.j2
     dest: /etc/nginx/stream.conf.d/xray-sni.conf
     mode: '0644'
-  notify: Restart nginx
+  notify: Reload nginx
 
 - name: Block external access to Xray internal port in UFW
   # 配合 SNI 分流架构，明确拒绝外网直接访问内部端口 (如 10086)
