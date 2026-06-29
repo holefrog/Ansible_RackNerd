@@ -18,7 +18,7 @@
     mode: '0600'
   notify: 重启 yattee-server
 
-- name: 启动 yattee-server 容器
+- name: 启动 yattee-server 容器[第一次需要较长时间，约5-10分钟，耐心等待]
   ansible.builtin.command:
     cmd: docker compose up -d --build
     chdir: "{{ yattee_install_dir }}"

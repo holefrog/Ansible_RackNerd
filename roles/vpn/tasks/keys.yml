@@ -13,7 +13,7 @@
   register: vpn_verify_keys
   ignore_errors: true
   changed_when: false
-  when: reality_keys_file.stat.exists
+  when: vpn_reality_keys_file.stat.exists
 
 - name: Force delete invalid Reality keys
   # 自愈机制：如果发现现存密钥文件无效，强制将其删除，为下一步重新生成扫清障碍
