@@ -8,6 +8,9 @@ import sys
 
 def find_firefox_profile():
     patterns = [
+        "~/.config/mozilla/firefox/*.default-release/cookies.sqlite",
+        "~/.config/mozilla/firefox/*.default/cookies.sqlite",
+        "~/.config/mozilla/firefox/*/cookies.sqlite",
         "~/.mozilla/firefox/*.default-release/cookies.sqlite",
         "~/.mozilla/firefox/*.default/cookies.sqlite",
         "~/.mozilla/firefox/*/cookies.sqlite",
