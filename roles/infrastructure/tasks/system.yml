@@ -10,7 +10,7 @@
 
 - name: Install basic maintenance tools
   ansible.builtin.package:
-    name: [jq, cron, tar, wget, curl]
+    name: [jq, cron, tar, wget, curl, kitty-terminfo]
     state: present
 
 # --- 核心改进：Swap 挂载状态检查逻辑 ---
