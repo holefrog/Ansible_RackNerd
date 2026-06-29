@@ -1,13 +1,4 @@
 ---
-- name: Cleanup legacy Xray files from shared_data_dir (WebDAV)
-  ansible.builtin.file:
-    path: "{{ shared_data_dir }}/{{ item }}"
-    state: absent
-  loop:
-    - xray_client.json
-    - xray_link.txt
-    - xray_qr.png
-
 - name: Ensure Xray data directory exists
   ansible.builtin.file:
     path: "{{ web_root }}/{{ xray_path_url }}"
