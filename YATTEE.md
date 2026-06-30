@@ -31,23 +31,29 @@
 由于原生 `yt-dlp` 已不再支持直接通过参数开启 OAuth2（该功能原为已失效的第三方插件），我们目前最稳定绕过风控的方法仍然是向后端注入真实的浏览器 Cookies。
 
 1. **获取 Cookies**：
-   - 确保你在电脑的浏览器（推荐 Firefox 或 Chrome）中已登录美区 YouTube 账号。
-   - **方法 A（原生极客法，推荐）**：如果你电脑上安装了 `yt-dlp`，可以直接在你的本地终端运行以下命令，提取 Firefox 的 Cookie 并**仅过滤出 YouTube 的数据**保存：
-     ```bash
-     yt-dlp --cookies-from-browser firefox --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download && grep "youtube" cookies.txt > yt-cookies.txt
-     ```
-     *(生成后，用文本编辑器打开新生成的 `yt-cookies.txt`，复制其全部内容)*
-   - **方法 B（浏览器插件法）**：安装插件 [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/ccpbcjlkhojgfhdkfgmhhgbfhbfiaepj)，在 YouTube 页面点击导出为 Netscape 格式文本。
+   - **方法 A（原生命令行法，推荐）**：如果你电脑上安装了 `yt-dlp`，可直接在本地终端提取。
+     - **注意：必须使用普通窗口登录**（无痕模式的 Cookie 只在内存中，提取不到）。
+     - 在终端运行以下命令，提取 Firefox 的 Cookie 并**仅过滤出 YouTube 的数据**保存：
+       ```bash
+       yt-dlp --cookies-from-browser chrome --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download ; grep "youtube" cookies.txt > ~/Temp/yt-cookies.txt
+       ```
+       *(如果在执行时终端报错 `No video formats found!`，**完全不用理会**！Cookie 在报错前就已经成功提取到了。用文本编辑器打开 `~/Temp/yt-cookies.txt`，复制其全部内容)*
+     - **延长寿命秘诀**：提取完成后，千万不要在网页点“退出登录”。直接去浏览器的设置里，手动清除 YouTube.com 的站点数据。这样本地去除了登录态，但远端 Cookie 依然存活！
+
+   - **方法 B（浏览器插件法）**：
+     - **注意：极力推荐使用无痕/隐私窗口登录**（需在扩展设置里允许该插件在隐私模式下运行）。
+     - 安装插件 [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/ccpbcjlkhojgfhdkfgmhhgbfhbfiaepj)，在 YouTube 页面点击导出为 Netscape 格式文本。
+     - **延长寿命秘诀**：导出文本后，**绝对不要点击“退出登录”**，直接关闭无痕窗口即可。
 
 2. **填入 Yattee 后台**：
    - 访问 `https://yattee.yourdomain.com/admin`，输入管理员账密登录。
    - 进入左侧 **`Sites`（站点管理）** -> 找到 **YouTube** -> 点击 **Edit**。
    - 验证方式保持为 **`Cookies`**。
-   - 将刚才导出的 `cookies.txt` 全部文本内容粘贴到下方的输入框中。
+   - 将刚才导出的 Cookie 文本粘贴到下方的输入框中。
    - 点击 **`Save (保存)`**。
    - 在底部随便输入一个 YouTube 视频链接（如 `https://www.youtube.com/watch?v=jNQXAC9IVRw`），点击 **`Test Credentials (测试凭证)`**。只要不再报错 bot，即代表授权成功！
 
-3. *注意：YouTube 的 Cookie 存在有效期。为了最大程度延长寿命，导出 Cookie 后请直接关闭该浏览器的无痕窗口，**绝对不要点击“退出登录”**。如果未来再次出现提取失败，请重复此步骤更新 Cookie。*
+3. *注意：如果未来在使用 Yattee 时再次出现提取失败或无法播放，说明 Cookie 已过期，请重复上述任一步骤重新获取并覆盖。*
 
 ---
 
