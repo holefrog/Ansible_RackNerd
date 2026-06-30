@@ -30,7 +30,7 @@
 
 通过将服务器伪装成美区智能电视，获取无限期有效的 Refresh Token，从此不再受短期网页 Cookie 丢状态的折磨。
 
-1. 打开电脑浏览器，访问 `https://yattee.holefrog.dynamic-dns.net/admin`，输入 `vars.yml` 和 `secrets.yml` 中配置的管理员账号密码。
+1. 打开电脑浏览器，访问 `https://yattee.yourdomain.com/admin`，输入 `vars.yml` 和 `secrets.yml` 中配置的管理员账号密码。
 2. 进入 **`Sites`（站点管理）** -> 找到 **YouTube** -> 点击 **Configure**。
 3. 将 **Authentication Method**（验证方式）从默认的 *Cookies* 切换为 **`OAuth2`** 并保存。
 4. **获取授权码：** SSH 登录 VPS，执行以下命令实时查看容器运行日志：
@@ -49,7 +49,7 @@
 
 1. 在 iPhone 上安装 **Yattee**（TestFlight 2.0 版或 App Store 正式版皆可）。
 2. 进入 **`Settings (⚙️)`** -> **`Locations (位置)`** -> 点击底部 **`+ Add Location (添加位置)`**。
-3. 在 **Address (地址)** 中填入你的专属后端地址：`https://yattee.holefrog.dynamic-dns.net/`。
+3. 在 **Address (地址)** 中填入你的专属后端地址：`https://yattee.yourdomain.com/`。
 4. 保存并**选中该节点**。
 5. 点击进入该 Location 详情，选择 **`+ Add Account (添加账号)`**，输入管理员账密。
 6. 完成！直接锁屏关机，享受丝滑无广告的后台音频播放。

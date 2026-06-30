@@ -96,16 +96,24 @@ graph TD
 ### 3. Application (应用层)
 **职责**：提供面向用户的具体网络业务。
 - **Aria2**：部署下载服务，并通过 `nginx-aria2.conf.j2` 模板将 `/jsonrpc` 路由**注入**到 Nginx 的 `locations.d` 目录中。
+  - **如何连接 AriaNg**：
+    1. 打开任何 [AriaNg](https://ariang.mayswind.net/) 客户端（网页版或本地 App）。
+    2. 进入 **AriaNg 设置 -> RPC (Aria2 RPC 密钥)**。
+    3. **Aria2 RPC 地址** 填写：你的主域名 (如 `yourdomain.com`)。
+    4. **Aria2 RPC 协议** 选择：`WebSocket (安全)` 或 `HTTPS`。
+    5. **Aria2 RPC 端口** 填写：`443`。
+    6. **Aria2 RPC 路径** 填写：`/jsonrpc`。
+    7. **Aria2 RPC 密钥** 填写：你在 `secrets.yml` 中配置的 `aria2_token`。
 - **WebDAV**：将 `/webdav/` 路由（附带密码校验和前端图标增强脚本 `webdav_footer.html`）注入到 Nginx 中。
-- **Yattee Backend (yattee-server)**：私有化的 YouTube 客户端同步后端，通过 Docker 运行，独立子域名 `yattee.holefrog.dynamic-dns.net` 由 Nginx 反代。
-  - **如何使用 Yattee**：
-    - **网页后台 (Admin Panel)**: 部署完成后，在浏览器中访问 `https://<yattee子域名>/admin` 进入管理界面，或者访问 `https://<yattee子域名>/` 进入登录及首选项配置界面。默认账号密码在 `secrets.yml` 和 `vars.yml` 中配置。
-    - **客户端挂载 (App Setup)**: 
-      1. 打开 iOS/macOS 上的 Yattee 客户端。
-      2. 导航至 **Settings (⚙️) -> Locations (位置)**。
-      3. 点击底部 **+ Add Location (添加位置)**。
-      4. 在 **Address (地址)** 中填入你的专属后端地址：`https://<yattee子域名>/`，保存并**选中该节点**。
-      5. 在选中该 Location 后，点击进入详情，选择 **+ Add Account (添加账号)**，输入管理员账密，即可开启无缝跨设备私有同步。
+  - **如何连接 WebDAV**：
+    1. 打开支持 WebDAV 的客户端（如 nPlayer, Infuse, macOS Finder, 网页浏览器等）。
+    2. **服务器地址 (URL)** 填写：`https://你的主域名/webdav/` (如 `https://yourdomain.com/webdav/`)。
+    3. **端口** 填写：`443`。
+    4. **协议** 选择：`HTTPS`。
+    5. **用户名** 填写：你在 `secrets.yml` 中配置的 `webdav_user`。
+    6. **密码** 填写：生成 `webdav_password_hash` 时使用的**原始明文密码**。
+- **Yattee Backend (yattee-server)**：私有化的 YouTube 客户端同步后端，通过 Docker 运行，独立子域名 `yattee.yourdomain.com` 由 Nginx 反代。
+  - **如何使用 Yattee**：详见 [YATTEE.md](YATTEE.md)
 
 ### 4. VPN (代理层)
 **职责**：提供隐蔽的网络加密代理隧道（被精细拆分为多个模块保持高可读性）。
@@ -114,6 +122,11 @@ graph TD
 - **服务端启停 (server.yml)**：渲染服务端配置并自启。
 - **网络集成 (network.yml)**：向 Nginx 注入 Xray 的回源分流配置，并在 UFW 中添加规则彻底封死 10086 的公网暴露面。
 - **客户端凭证下发 (client.yml)**：自动生成标准 `config.json` 配置、`vless://` 链接，并调用 `qrencode` 渲染二维码 (PNG)，支持直接扫码导入手机。
+  - **如何连接 Xray 代理**：
+    1. 部署完成后，Xray 的客户端凭证已通过 Nginx 暴露在一个私密路径下。该路径由 `vars.yml` 中的 `xray_path_url` 变量定义（建议在部署前修改为复杂的随机字符串，防扫描）。
+    2. **手机端 (iOS/Android)**：打开支持 VLESS Reality 协议的客户端（如 Shadowrocket, v2rayNG, Vfox, Streisand）。访问网址 `https://你的主域名/<私密路径>/xray_qr.png`，保存二维码图片或直接使用另一台设备扫描导入。
+    3. **电脑端 (Windows/macOS)**：打开客户端（如 v2rayN, Vfox, Hiddify）。访问网址 `https://你的主域名/<私密路径>/xray_link.txt`，复制全部文本内容（即 `vless://...`），然后在客户端中选择“从剪贴板导入”。
+    4. **高级用法 (原生配置)**：访问 `https://你的主域名/<私密路径>/xray_client.json` 下载标准的 JSON 配置文件供核心直接使用。
 
 ## 五、 运维与健康监控 (check_status.yml)
 
