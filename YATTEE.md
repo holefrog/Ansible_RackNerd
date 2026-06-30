@@ -66,26 +66,26 @@
 
 ---
 
-## 📺 终极防封方案：使用 Invidious 代理（完全免 Cookie）
+## 📱 终极防封方案：Yattee 客户端“前后端分离”玩法
 
-如果你在贴入正确的 Cookie 后，点击 `Test Credentials` 依然**死活报错** `Sign in to confirm you’re not a bot`，那说明 **YouTube 已经将你的机房 IP 彻底拉黑**，或者检测到了 Cookie 从你的家庭宽带“瞬移”到机房，触发了秒封机制。
+如果你的机房 IP 彻底被 YouTube 拉黑，无论怎么贴 Cookie 都死活报错，**千万不要在服务端死磕了**！因为在 2026 年，各大公共 Invidious 节点为了自保，已经**全线拉黑了来自机房 IP 的 API 请求（全部报 401 或 403 错误）**。
 
-对于这种“绝症”，最一劳永逸的方案是彻底放弃在 VPS 上使用 `yt-dlp` 直连，改为借用公共的 Invidious 实例进行代理抓取：
+Yattee 作为顶级播放器，早就为你准备了终极绝招：**数据库与视频流分离**。
+你的自建服务器（被封的 IP）只用来存**订阅、播放历史、账号数据**。
+真正的视频解析，全部交给你手机本地的网络（家庭宽带/干净梯子）直连海外公共 Piped 节点！
 
-1. 打开你的 VPS 终端，编辑 Yattee 的环境变量文件：
-   ```bash
-   nano /opt/yattee-server/.env
-   ```
-2. 找到最下面的一行，确保它长这样（如果被注释了请去掉 `#`）：
-   ```env
-   INVIDIOUS_INSTANCE_URL=https://invidious.nerdvpn.de
-   ```
-   *(注：公共节点有时会失效，如果遇到报错 `Name or service not known`，请前往 [Invidious 官方节点列表](https://api.invidious.io/) 换一个活跃节点，例如 `https://inv.nadeko.net`)*
-3. 保存文件并重启容器：
-   ```bash
-   cd /opt/yattee-server && docker compose up -d
-   ```
-4. **大功告成！** 此时回到 Yattee 后台，你可以**把 YouTube 的 Cookie 彻底清空**，系统会自动把所有的视频解析请求转发给这个公共实例。你再也不会看到那个恶心的机器人验证报错了！
+### 客户端终极配置步骤（彻底告别报错）：
+
+1. **清空服务端烂摊子：** 如果你改过 `.env` 里的 `INVIDIOUS_INSTANCE_URL`，请删掉那行，重启容器，让服务端保持最原始的状态。Yattee 后台的 Cookie 爱填不填，不管它了。
+2. **在 iPhone/Mac 上打开 Yattee 客户端。**
+3. **添加你的私有数据库：** 
+   - 进 `Settings` -> `Locations` -> 添加你的专属地址 `https://yattee.yourdomain.com/`，并在此 Location 中登入账号。
+   - **关键设置**：选中这个节点后，确保只开启 **`Sync (同步)`**，**关闭** `Manifest` 或 `Video` 的开关。
+4. **添加公共播放流源：**
+   - 再次进入 `Locations` -> 点击右上角添加。
+   - 这次我们不用账号，直接在 `Address` 填入最稳定的公共 Piped 节点：`https://pipedapi.kavin.rocks` （或任何你喜欢的 Piped 节点）。
+   - **关键设置**：选中这个公共节点，**关闭** `Sync`，只开启 **`Manifest (解析)`** 和 **`Video (播放)`**！
+5. **起飞！** 现在你去搜索或点击视频，Yattee 会自动把搜索和播放请求交给你的手机直接发往 `pipedapi.kavin.rocks`（用的是你手机当前干净的 IP），解析出视频后，再把播放进度偷偷存回你的 `yattee.yourdomain.com` 数据库里。完美绕过机房封锁！
 ---
 
 ## 📱 第三步：iPhone / macOS Yattee 客户端对接
