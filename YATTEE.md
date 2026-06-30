@@ -31,9 +31,13 @@
 由于原生 `yt-dlp` 已不再支持直接通过参数开启 OAuth2（该功能原为已失效的第三方插件），我们目前最稳定绕过风控的方法仍然是向后端注入真实的浏览器 Cookies。
 
 1. **获取 Cookies**：
-   - 在电脑浏览器（如 Chrome/Edge）中登录你刚刚准备好的美区 YouTube 账号。
-   - 安装浏览器插件：例如 [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/ccpbcjlkhojgfhdkfgmhhgbfhbfiaepj)。
-   - 停留在 YouTube 页面，点击该插件，将 Cookies 导出为 **Netscape 格式** 的纯文本（内容以 `# Netscape HTTP Cookie File` 开头）。
+   - 确保你在电脑的浏览器（推荐 Firefox 或 Chrome）中已登录美区 YouTube 账号。
+   - **方法 A（原生极客法，推荐）**：如果你电脑上安装了 `yt-dlp`，可以直接在你的本地终端运行以下命令，将 Firefox 的 Cookie 提取并保存为文本文件：
+     ```bash
+     yt-dlp --cookies-from-browser firefox --cookies cookies.txt
+     ```
+     *(如果用的是 Chrome，将 `firefox` 换成 `chrome` 即可。生成后用文本编辑器打开 `cookies.txt` 并复制全部内容)*
+   - **方法 B（浏览器插件法）**：安装插件 [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/ccpbcjlkhojgfhdkfgmhhgbfhbfiaepj)，在 YouTube 页面点击导出为 Netscape 格式文本。
 
 2. **填入 Yattee 后台**：
    - 访问 `https://yattee.yourdomain.com/admin`，输入管理员账密登录。
