@@ -97,14 +97,14 @@ graph TD
 **职责**：提供面向用户的具体网络业务。
 - **Aria2**：部署下载服务，并通过 `nginx-aria2.conf.j2` 模板将 `/jsonrpc` 路由**注入**到 Nginx 的 `locations.d` 目录中。
 - **WebDAV**：将 `/webdav/` 路由（附带密码校验和前端图标增强脚本 `webdav_footer.html`）注入到 Nginx 中。
-- **Yattee Backend (yattee-server)**：私有化的 YouTube 客户端同步后端，通过 Docker 运行并由 Nginx 反代。
+- **Yattee Backend (yattee-server)**：私有化的 YouTube 客户端同步后端，通过 Docker 运行，独立子域名 `yatee.holefrog.dynamic-dns.net` 由 Nginx 反代。
   - **如何使用 Yattee**：
-    - **网页后台 (Admin Panel)**: 部署完成后，在浏览器中访问 `https://<你的域名>/yattee/admin` 进入管理界面，或者访问 `https://<你的域名>/yattee/` 进入登录及首选项配置界面。默认账号密码在 `secrets.yml` 和 `vars.yml` 中配置。
+    - **网页后台 (Admin Panel)**: 部署完成后，在浏览器中访问 `https://<yattee子域名>/admin` 进入管理界面，或者访问 `https://<yattee子域名>/` 进入登录及首选项配置界面。默认账号密码在 `secrets.yml` 和 `vars.yml` 中配置。
     - **客户端挂载 (App Setup)**: 
       1. 打开 iOS/macOS 上的 Yattee 客户端。
       2. 导航至 **Settings (⚙️) -> Locations (位置)**。
       3. 点击底部 **+ Add Location (添加位置)**。
-      4. 在 **Address (地址)** 中填入你的专属后端地址：`https://<你的域名>/yattee/`，保存并**选中该节点**。
+      4. 在 **Address (地址)** 中填入你的专属后端地址：`https://<yattee子域名>/`，保存并**选中该节点**。
       5. 在选中该 Location 后，点击进入详情，选择 **+ Add Account (添加账号)**，输入管理员账密，即可开启无缝跨设备私有同步。
 
 ### 4. VPN (代理层)

@@ -50,6 +50,35 @@
       ansible.builtin.fail:
         msg: "证书申请失败，Nginx 已恢复启动，请检查域名解析是否生效。"
 
+# --- yattee 子域名证书申请（仅首次）---
+- name: Check if yattee subdomain SSL certificate exists
+  ansible.builtin.stat:
+    path: "{{ ssl_cert_dir }}/{{ yattee_domain }}/fullchain.pem"
+  register: infrastructure_yattee_cert_file
+  when: yattee_domain is defined
+
+- name: Request yattee subdomain SSL certificate via Certbot standalone
+  when:
+    - yattee_domain is defined
+    - not (infrastructure_yattee_cert_file.stat.exists | default(false))
+  block:
+    - name: Run Certbot for yattee subdomain
+      ansible.builtin.shell: |
+        certbot certonly --standalone -d {{ yattee_domain }} \
+        --non-interactive --agree-tos --email {{ email }} \
+        --pre-hook "systemctl stop nginx" \
+        --post-hook "systemctl start nginx"
+      register: infrastructure_yattee_certbot_result
+      changed_when: infrastructure_yattee_certbot_result.rc == 0
+  rescue:
+    - name: Certbot failed for yattee - restart Nginx to restore service
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+    - name: Fail with clear message
+      ansible.builtin.fail:
+        msg: "yattee 子域名证书申请失败，Nginx 已恢复启动，请检查子域名 DNS 解析是否生效。"
+
 # --- 配置渲染（证书就绪后才执行）---
 - name: Render Nginx site configuration
   ansible.builtin.template:

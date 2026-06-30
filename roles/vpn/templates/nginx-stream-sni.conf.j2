@@ -8,7 +8,7 @@ upstream xray_backend {
 }
 
 upstream web_backend {
-    server 127.0.0.1:4433; # Nginx HTTPS 实际处理 Web 伪装响应的内部端口
+    server 127.0.0.1:{{ nginx_internal_https_port }}; # Nginx HTTPS 实际处理 Web 伪装响应的内部端口
 }
 
 server {
