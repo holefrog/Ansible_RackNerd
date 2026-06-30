@@ -18,21 +18,17 @@
     mode: '0600'
   notify: 重启 yattee-server
 
-- name: 渲染 yt-dlp 强制 OAuth2 配置文件
-  ansible.builtin.template:
-    src: yt-dlp.conf.j2
-    dest: "{{ yattee_install_dir }}/yt-dlp.conf"
-    mode: '0644'
+- name: 清理错误的 yt-dlp.conf
+  ansible.builtin.file:
+    path: "{{ yattee_install_dir }}/yt-dlp.conf"
+    state: absent
   notify: 重启 yattee-server
 
-- name: 渲染 docker-compose override (挂载 yt-dlp.conf)
-  ansible.builtin.template:
-    src: docker-compose.override.yml.j2
-    dest: "{{ yattee_install_dir }}/docker-compose.override.yml"
-    mode: '0644'
+- name: 清理错误的 docker-compose.override.yml
+  ansible.builtin.file:
+    path: "{{ yattee_install_dir }}/docker-compose.override.yml"
+    state: absent
   notify: 重启 yattee-server
-
-- name: 启动 yattee-server 容器[第一次需要较长时间，约5-10分钟，耐心等待]
   ansible.builtin.command:
     cmd: docker compose up -d --build
     chdir: "{{ yattee_install_dir }}"

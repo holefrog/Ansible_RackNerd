@@ -20,9 +20,7 @@
 
 1. 账号注册成功后，在电脑或手机浏览器中登录该新账号，访问 **[https://myaccount.google.com](https://myaccount.google.com)**。
 2. 在左侧/顶部菜单点击 **`Security (安全性)`** -> 往下划找到 **`How you sign in to Google（登录 Google 的方式）`** -> 点击 **`2-Step Verification (两步验证)`** 并将其开启。*（注：此处可以使用你的本地真实手机号接收一次性短信完成验证，仅用于两步验证保护，不会改变账号的美区归属国身份）*。
-3. 两步验证开启后，直接在浏览器地址栏输入并访问专用直达链接：**[https://myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords)**。
-4. 在 **App name** 中输入自定义名称（例如：`Yattee Server`），点击 **`Create (创建)`**。
-5. 屏幕上会弹出一个由 **16 位英文字母组成的黄色背景专用密码**。**请立刻复制并妥善保存它**（弹窗关闭后无法再次查看）。后续在登录 Yattee 后台时，**使用该 16 位密钥代替你原本的谷歌主密码**，即可 100% 免异地验证直通登录。
+3. 两步验证开启后，你的美区账号即做好了万全准备，可以随时用来进行下一步的电视端授权了。（注意：此账号只需在你的个人电脑浏览器中保持登录即可，**不需要为它生成 16 位的 App Password**，因为全新的 TV OAuth2 协议采用的是无密码扫码/输入授权码模式）。
 
 ---
 
@@ -34,7 +32,7 @@
 
 1. **触发授权流程：**
    - 访问 `https://yattee.yourdomain.com/admin`，输入管理员账密登录。
-   - 进入左侧 **`Sites`（站点管理）** -> 找到 **YouTube** -> 点击 **Configure**。
+   - 进入左侧 **`Sites`（站点管理）** -> 找到 **YouTube** -> 点击 **Edit**。
    - 在底部随便输入一个 YouTube 视频链接（如 `https://www.youtube.com/watch?v=jNQXAC9IVRw`），点击 **`Test Credentials (测试凭证)`**。此时网页会进入加载状态（卡住是正常的）。
 
 2. **获取电视端配对码：**
