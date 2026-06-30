@@ -32,11 +32,11 @@
 
 1. **获取 Cookies**：
    - 确保你在电脑的浏览器（推荐 Firefox 或 Chrome）中已登录美区 YouTube 账号。
-   - **方法 A（原生极客法，推荐）**：如果你电脑上安装了 `yt-dlp`，可以直接在你的本地终端运行以下命令，将 Firefox 的 Cookie 提取并保存为文本文件：
+   - **方法 A（原生极客法，推荐）**：如果你电脑上安装了 `yt-dlp`，可以直接在你的本地终端运行以下命令，提取 Firefox 的 Cookie 并**仅过滤出 YouTube 的数据**保存：
      ```bash
-     yt-dlp --cookies-from-browser firefox --cookies cookies.txt
+     yt-dlp --cookies-from-browser firefox --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download && grep "youtube" cookies.txt > yt-cookies.txt
      ```
-     *(如果用的是 Chrome，将 `firefox` 换成 `chrome` 即可。生成后用文本编辑器打开 `cookies.txt` 并复制全部内容)*
+     *(生成后，用文本编辑器打开新生成的 `yt-cookies.txt`，复制其全部内容)*
    - **方法 B（浏览器插件法）**：安装插件 [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/ccpbcjlkhojgfhdkfgmhhgbfhbfiaepj)，在 YouTube 页面点击导出为 Netscape 格式文本。
 
 2. **填入 Yattee 后台**：
