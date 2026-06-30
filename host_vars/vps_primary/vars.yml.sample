@@ -35,3 +35,12 @@ server_timezone: "America/Vancouver"    # 系统时区
 webdav_htpasswd_path: "/etc/nginx/.htpasswd_webdav"
 # 已统一：必须使用 webdav_footer_name 才能匹配 site.conf.j2 模板引用
 webdav_footer_name: "webdav_footer.html"
+
+# --- 8. Yattee 视频服务 ---
+yattee_internal_port: 8085                    # yattee-server 容器内部端口
+yattee_install_dir: "/opt/yattee-server"      # 源码与容器部署目录
+yattee_admin_user: "admin"                    # Yattee 管理员用户名
+yattee_domain: "yatee.your-domain.com"        # Yattee 子域名
+
+# --- 9. Nginx 内部端口 ---
+nginx_internal_https_port: 4433               # Nginx HTTPS 内部监听端口 (供 Stream SNI 分流转发)
