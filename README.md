@@ -32,7 +32,7 @@ graph TD
     
     subgraph http_layer ["Nginx HTTP 层 (:4433) — 按 server_name 匹配"]
         Port_4433 -->|"server_name = holefrog..."| Main_Server["主站 server 块"]
-        Port_4433 -->|"server_name = yatee.holefrog..."| Yattee_Server["Yattee server 块"]
+        Port_4433 -->|"server_name = yattee.holefrog..."| Yattee_Server["Yattee server 块"]
     end
 
     subgraph app_service ["主站应用服务"]
@@ -97,7 +97,7 @@ graph TD
 **职责**：提供面向用户的具体网络业务。
 - **Aria2**：部署下载服务，并通过 `nginx-aria2.conf.j2` 模板将 `/jsonrpc` 路由**注入**到 Nginx 的 `locations.d` 目录中。
 - **WebDAV**：将 `/webdav/` 路由（附带密码校验和前端图标增强脚本 `webdav_footer.html`）注入到 Nginx 中。
-- **Yattee Backend (yattee-server)**：私有化的 YouTube 客户端同步后端，通过 Docker 运行，独立子域名 `yatee.holefrog.dynamic-dns.net` 由 Nginx 反代。
+- **Yattee Backend (yattee-server)**：私有化的 YouTube 客户端同步后端，通过 Docker 运行，独立子域名 `yattee.holefrog.dynamic-dns.net` 由 Nginx 反代。
   - **如何使用 Yattee**：
     - **网页后台 (Admin Panel)**: 部署完成后，在浏览器中访问 `https://<yattee子域名>/admin` 进入管理界面，或者访问 `https://<yattee子域名>/` 进入登录及首选项配置界面。默认账号密码在 `secrets.yml` 和 `vars.yml` 中配置。
     - **客户端挂载 (App Setup)**: 
