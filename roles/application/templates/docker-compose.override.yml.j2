@@ -1,0 +1,6 @@
+version: '3'
+services:
+  yattee-server:
+    volumes:
+      # 挂载自定义 yt-dlp 配置，强制启用 oauth2
+      - ./yt-dlp.conf:/etc/yt-dlp.conf:ro

@@ -26,22 +26,30 @@
 
 ---
 
-## 📺 第二步：绑定 OAuth2（电视端协议，一劳永逸）
+## 📺 第二步：绑定 OAuth2 绕过机房风控（电视端协议）
 
-通过将服务器伪装成美区智能电视，获取无限期有效的 Refresh Token，从此不再受短期网页 Cookie 丢状态的折磨。
+在 2024-2026 年，YouTube 针对 RackNerd 等机房 VPS 进行了严格的反爬风控，直接填入 Cookie 往往会被秒封并报出 `Sign in to confirm you’re not a bot` 错误。
 
-1. 打开电脑浏览器，访问 `https://yattee.yourdomain.com/admin`，输入 `vars.yml` 和 `secrets.yml` 中配置的管理员账号密码。
-2. 进入 **`Sites`（站点管理）** -> 找到 **YouTube** -> 点击 **Configure**。
-3. 将 **Authentication Method**（验证方式）从默认的 *Cookies* 切换为 **`OAuth2`** 并保存。
-4. **获取授权码：** SSH 登录 VPS，执行以下命令实时查看容器运行日志：
-   ```bash
-   docker logs -f yattee-server
-   ```
-5. 终端日志中会滚出一行谷歌官方电视配对提示：
-   > `[youtube+oauth2] To give yt-dlp access to your account, go to https://www.google.com/device and enter code XXX-YYY-ZZZ`
-6. **进行配对：** 复制那串 8 位数的 `XXX-YYY-ZZZ` 代码。在电脑浏览器上（**确保浏览器登录的是你准备好的带 2FA 的美区谷歌账号**）打开：**[https://www.google.com/device](https://www.google.com/device)**。
-7. 输入代码，点击下一步。当谷歌提示正在申请授权 **"YouTube on TV"** 时，点击 **`Allow（允许）`**。
-8. 回到 SSH 终端，看到日志输出 `OAuth2 authentication successful`，说明密钥已安全落盘并持久化。按 `Ctrl + C` 退出日志跟踪。
+为了彻底解决此问题，本 Ansible 部署在系统底层强制给 `yt-dlp` 注入了 `--oauth2` 参数，让服务器伪装成美区智能电视。具体授权步骤如下：
+
+1. **触发授权流程：**
+   - 访问 `https://yattee.yourdomain.com/admin`，输入管理员账密登录。
+   - 进入左侧 **`Sites`（站点管理）** -> 找到 **YouTube** -> 点击 **Configure**。
+   - 在底部随便输入一个 YouTube 视频链接（如 `https://www.youtube.com/watch?v=jNQXAC9IVRw`），点击 **`Test Credentials (测试凭证)`**。此时网页会进入加载状态（卡住是正常的）。
+
+2. **获取电视端配对码：**
+   - 马上在你的电脑上 SSH 登录到 VPS 终端，执行以下命令查看容器实时日志：
+     ```bash
+     docker logs -f yattee-server
+     ```
+   - 你会在日志中看到一行类似这样的谷歌官方电视配对提示：
+     > `[youtube+oauth2] To give yt-dlp access to your account, go to https://www.google.com/device and enter code XXX-YYY-ZZZ`
+
+3. **完成配对授权：**
+   - 复制那串 8 位数的 `XXX-YYY-ZZZ` 代码。
+   - 在电脑浏览器上（**确保该浏览器登录的是你准备好的带 2FA 的美区谷歌账号**）打开：**[https://www.google.com/device](https://www.google.com/device)**。
+   - 输入代码，点击下一步。当谷歌提示正在申请授权 **"YouTube on TV"** 时，点击 **`Allow（允许）`**。
+   - 回到 SSH 终端，看到日志输出 `OAuth2 authentication successful`，说明授权密钥已成功落盘。此后无限期免 Cookie 稳定抓取。按 `Ctrl + C` 退出日志。
 
 ---
 
