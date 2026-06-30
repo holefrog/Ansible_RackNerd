@@ -135,7 +135,6 @@ test_config.ini
 !deploy.sh
 !ansible.sh
 !remote_login.sh
-!git_push_all.sh
 !close_22.sh
 
 
