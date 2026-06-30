@@ -41,7 +41,20 @@
    ```
 
    **② 第一步：连接本地 VPN 隧道**
-   确保你的代理软件（如 Hiddify）已连接到你的 VPS，并确认了本地开放的 SOCKS5 代理端口（例如 Hiddify 默认的 `12334`）。
+   你需要使用代理软件（如 Hiddify）连接到你的 VPS。
+   
+   **【Hiddify 使用简介与最新配置方法】**
+   Hiddify 是一款支持全平台的现代化代理客户端，能够完美解析我们部署的 Xray (VLESS/Reality) 节点。
+   - **下载地址**：请访问官方 GitHub Releases [hiddify/hiddify-app](https://github.com/hiddify/hiddify-app/releases) 页面。
+     - Windows 用户请下载 `Hiddify-Windows-Setup-x64.exe` 等安装包。
+     - Linux 用户请下载 `.AppImage` 或 `.deb` 格式文件。
+   - **最新使用方法**：
+     1. 安装并打开 Hiddify 客户端。
+     2. 复制你 VPS 上的 Xray 节点链接（即 `vless://...` 开头的那串代码）。
+     3. 点击 Hiddify 主界面的 **“+” (添加)** 按钮，选择 **“从剪贴板添加 (Add from Clipboard)”** 导入节点。
+     4. 在主界面或设置中，将“路由模式”切换为 **全局 (Global)**（这对成功欺骗 Google 风控极其关键）。
+     5. 点击中央的 **大圆圈按钮** 连接到你的 VPS。
+     6. 连接成功后，Hiddify 默认会在本地开启 SOCKS5 代理，端口为 `12334`（可在 设置 -> 高级设置 中确认该端口号）。
 
    **③ 第二步：启动纯净的“代理专属 Chrome”**
    千万不要用你的日常 Chrome，也不要用隐身模式（隐身模式无法落盘保存 Cookie）。
