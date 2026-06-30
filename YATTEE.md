@@ -28,31 +28,38 @@
 
 在 2024-2026 年，YouTube 针对 RackNerd 等机房 VPS 进行了严格的反爬风控。如果后台不填入任何身份凭证，在提取视频时必定会报出 `Sign in to confirm you’re not a bot` 的错误。
 
-由于原生 `yt-dlp` 已不再支持直接通过参数开启 OAuth2（该功能原为已失效的第三方插件），我们目前最稳定绕过风控的方法仍然是向后端注入真实的浏览器 Cookies。
+由于我们根本就不能用 OAuth2，目前最稳定绕过风控的方法仍然是向后端注入真实的浏览器 Cookies。
 
-1. **获取 Cookies**：
-   - 🚨 **核心防封锁前提（极其重要）：在开始提取之前，请务必在你的电脑上全程开启全局代理，并连接美国节点（强烈建议直接连接你刚搭建好的本机 VPS Xray 节点）！** 这样能保证 Cookie 诞生的 IP 与服务端 `yt-dlp` 最终使用的 IP 完全一致（跳跃距离为 0），极大降低被 Google 判定为“异地盗用”而秒封的概率。
-   - **方法 A（原生命令行法，推荐）**：如果你电脑上安装了 `yt-dlp`，可直接在本地终端提取。
-     - **注意：必须使用普通窗口登录**（无痕模式的 Cookie 只在内存中，提取不到）。
-     - 在终端运行以下命令，提取对应的浏览器 Cookie 并**仅过滤出 YouTube 的数据**保存：
-       
-       **如果你使用的是 Chrome 浏览器：**
-       ```bash
-       yt-dlp --cookies-from-browser chrome --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download ; echo "# Netscape HTTP Cookie File" > ~/Temp/yt-cookies.txt ; grep "youtube" cookies.txt >> ~/Temp/yt-cookies.txt
-       ```
+1. **获取 Cookies（零 IP 跳跃法）**：
+   因为账号注册在美国且 VPS 在美国，如果直接在其它国家提取 Cookie 导入机房，100% 会触发 `Sign in to confirm you're not a bot`（Google 会检测到“家宽登录 -> 机房请求”的异地瞬移）。
+   因此，**一定要连接 VPS 上的 Xray 后，使用代理启动纯净的 Chrome，登录 YouTube 再导出 Cookie，在 VPS 上才能正常使用！**
 
-       **如果你使用的是 Firefox 浏览器：**
-       ```bash
-       yt-dlp --cookies-from-browser firefox --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download ; echo "# Netscape HTTP Cookie File" > ~/Temp/yt-cookies.txt ; grep "youtube" cookies.txt >> ~/Temp/yt-cookies.txt
-       ```
+   **① 前提条件：确保你的系统安装了解密模块（Linux 系统下提取时）**
+   Chrome 的核心登录 Cookie 是加密存放的，如果没有 `secretstorage`，yt-dlp 提取到的将全是无用的空壳。
+   ```bash
+   sudo apt update && sudo apt install -y python3-secretstorage
+   ```
 
-       *(如果在执行时终端报错 `No video formats found!`，**完全不用理会**！Cookie 在报错前就已经成功提取到了。用文本编辑器打开 `~/Temp/yt-cookies.txt`，复制其全部内容)*
-     - **延长寿命秘诀**：提取完成后，千万不要在网页点“退出登录”。直接去浏览器的设置里，手动清除 YouTube.com 的站点数据。这样本地去除了登录态，但远端 Cookie 依然存活！
+   **② 第一步：连接本地 VPN 隧道**
+   确保你的代理软件（如 Hiddify）已连接到你的 VPS，并确认了本地开放的 SOCKS5 代理端口（例如 Hiddify 默认的 `12334`）。
 
-   - **方法 B（浏览器插件法）**：
-     - **注意：极力推荐使用无痕/隐私窗口登录**（需在扩展设置里允许该插件在隐私模式下运行）。
-     - 安装插件 [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/ccpbcjlkhojgfhdkfgmhhgbfhbfiaepj)，在 YouTube 页面点击导出为 Netscape 格式文本。
-     - **延长寿命秘诀**：导出文本后，**绝对不要点击“退出登录”**，直接关闭无痕窗口即可。
+   **③ 第二步：启动纯净的“代理专属 Chrome”**
+   千万不要用你的日常 Chrome，也不要用隐身模式（隐身模式无法落盘保存 Cookie）。
+   在终端运行以下命令，启动一个**完全隔离且强制走 VPS 代理**的全新 Chrome：
+   ```bash
+   google-chrome --proxy-server="socks5://127.0.0.1:12334" --user-data-dir="$HOME/chrome_yattee"
+   ```
+   
+   在弹出的新浏览器中，正常登录你的 YouTube 账号。登录完成后，**务必彻底关闭该 Chrome 窗口**（释放数据库文件锁）。
+
+   **④ 第三步：代理环境下的精准提取**
+   执行最终的 yt-dlp 提取命令。该命令同样强制走代理，并精确指定刚才那个隔离的 Chrome 配置文件夹：
+   ```bash
+   yt-dlp --proxy "socks5://127.0.0.1:12334" --cookies-from-browser "chrome:$HOME/chrome_yattee" --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download ; echo "# Netscape HTTP Cookie File" > ~/Temp/yt-cookies.txt ; grep "youtube" cookies.txt >> ~/Temp/yt-cookies.txt
+   ```
+   *(注：如果命令最后报错 `No video formats found`，直接无视它，因为我们需要的 Cookie 已经在报错前被成功导出了！)*
+
+   只要命令执行后没有弹出机器人验证，说明 Cookie 已经成功经受住了机房 IP 的风控考验。打开 `~/Temp/yt-cookies.txt`，将其中的全部内容复制准备粘贴。
 
 2. **填入 Yattee 后台**：
    - 访问 `https://yattee.yourdomain.com/admin`，输入管理员账密登录。
@@ -66,38 +73,16 @@
 
 ---
 
-## 📱 终极防封方案：Yattee 客户端“前后端分离”玩法
+## 📱 第三步：iPhone Yattee 客户端对接
 
-如果你的机房 IP 彻底被 YouTube 拉黑，无论怎么贴 Cookie 都死活报错，**千万不要在服务端死磕了**！因为在 2026 年，各大公共 Invidious 节点为了自保，已经**全线拉黑了来自机房 IP 的 API 请求（全部报 401 或 403 错误）**。
-
-Yattee 作为顶级播放器，早就为你准备了终极绝招：**数据库与视频流分离**。
-你的自建服务器（被封的 IP）只用来存**订阅、播放历史、账号数据**。
-真正的视频解析，全部交给你手机本地的网络（家庭宽带/干净梯子）直连海外公共 Piped 节点！
-
-### 客户端终极配置步骤（针对 Yattee 2 最新版）：
-
-1. **清空服务端烂摊子：** 如果你改过 `.env` 里的 `INVIDIOUS_INSTANCE_URL`，请删掉那行，重启容器，让服务端保持最原始的状态。Yattee 后台的 Cookie 爱填不填，不用管它了。
-2. **在 iPhone/Mac 上打开 Yattee 客户端。**
-3. **添加公共播放流源（用于提取视频）：**
-   - 找到并进入 **`Sources (源)`** 设置界面。
-   - 点击 **`Add (添加)`** -> **`Remote Server (远程服务器)`**。
-   - 填入最稳定的公共 Piped 节点地址：`https://pipedapi.kavin.rocks` （或任何你喜欢的 Piped/Invidious 节点）。
-   - 将其设置为默认/主要播放源。
-4. **添加你的私有数据库（用于账号同步）：**
-   - 再次点击 **`Add (添加)`** -> **`Remote Server (远程服务器)`**。
-   - 填入你自己的专属后端地址：`https://yattee.yourdomain.com/`，保存。
-   - 点击刚刚添加的这个专属服务器，输入你的管理员账密进行登录。
-5. **起飞！** 只要你在自己的服务器上保持登录，Yattee 2 会非常智能地处理：你去搜索或点击视频时，它会自动用你手机当前干净的 IP 连接公共节点提取视频；同时把播放进度和订阅数据默默存回你的自建服务器里。完美实现“流媒体解析”与“隐私数据库”的分离！
----
-
-## 📱 第三步：iPhone / macOS Yattee 客户端对接
-
-1. 在 iPhone 上安装 **Yattee**（TestFlight 2.0 版或 App Store 正式版皆可）。
-2. 进入 **`Settings (⚙️)`** -> **`Locations (位置)`** -> 点击底部 **`+ Add Location (添加位置)`**。
+1. **在 iPhone 上安装 Yattee**：
+   - 先在 App Store 下载 **TestFlight**。
+   - 然后使用浏览器打开链接 `https://testflight.apple.com/join/jTWDHuZE`。
+   - 页面会自动跳转到 TestFlight，接受邀请并下载最新版本的 Yattee。
+2. 进入 **`Settings (⚙️)`** -> **`Sources (源)`** -> 点击底部 **`+ Add Remote Server (添加源)`**。
 3. 在 **Address (地址)** 中填入你的专属后端地址：`https://yattee.yourdomain.com/`。
-4. 保存并**选中该节点**。
-5. 点击进入该 Location 详情，选择 **`+ Add Account (添加账号)`**，输入管理员账密。
-6. 完成！直接锁屏关机，享受丝滑无广告的后台音频播放。
+4. 点击下方的 **`Detect (检测)`**，检测成功后会要求输入账号密码（例如 `admin`/`admin`）。
+5. 保存后，就可以在首页使用新增加的 Source 来搜索和播放了。
 
 ---
 
@@ -124,41 +109,3 @@ docker logs -f yattee-server
 
 *(使用 `Ctrl + C` 可以退出日志实时查看模式)*
 
----
-
-## 🏆 终极绝招：如何为“新账号”提取免封锁 Cookie（零 IP 跳跃法）
-
-如果你非要使用一个**毫无历史权重的新注册 Google 账号**，在直接导入机房 IP 部署的 yt-dlp 时，100% 会触发 `Sign in to confirm you're not a bot`（甚至直接作废你的 Cookie）。
-
-这是因为 Google 风控检测到了“家宽登录 -> 机房请求”的异地瞬移。
-为了打破这个魔咒，我们需要执行**“零 IP 跳跃法”**：强制让 Chrome 浏览器和 yt-dlp 都在你的 VPS 机房 IP 环境下运行！
-
-### 核心步骤总结（Linux 终端演示）：
-
-**前提条件：确保你的系统安装了解密模块**
-Chrome 的核心登录 Cookie 是加密存放的，如果没有 `secretstorage`，yt-dlp 提取到的将全是无用的空壳。
-```bash
-sudo apt update && sudo apt install -y python3-secretstorage
-```
-
-**第一步：连接本地 VPN 隧道**
-确保你的代理软件（如 Hiddify）已连接到你的 VPS，并确认了本地开放的 SOCKS5 代理端口（例如 Hiddify 默认的 `12334`）。
-
-**第二步：启动纯净的“代理专属 Chrome”**
-千万不要用你的日常 Chrome，也不要用隐身模式（隐身模式无法落盘保存 Cookie）。
-在终端运行以下命令，启动一个**完全隔离且强制走 VPS 代理**的全新 Chrome：
-```bash
-google-chrome --proxy-server="socks5://127.0.0.1:12334" --user-data-dir="$HOME/chrome_yattee"
-```
-*在弹出的新浏览器中，正常登录你的 YouTube 新账号。登录完成后，**务必彻底关闭该 Chrome 窗口**（释放数据库文件锁）。*
-
-**第三步：代理环境下的精准提取**
-执行最终的 yt-dlp 提取命令。该命令同样强制走代理，并精确指定刚才那个隔离的 Chrome 配置文件夹：
-```bash
-yt-dlp --proxy "socks5://127.0.0.1:12334" --cookies-from-browser "chrome:$HOME/chrome_yattee" --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download ; echo "# Netscape HTTP Cookie File" > ~/Temp/yt-cookies.txt ; grep "youtube" cookies.txt >> ~/Temp/yt-cookies.txt
-```
-
-**第四步：大功告成**
-只要命令执行后**没有**弹出 `Sign in to confirm you're not a bot`，说明 Cookie 已经成功经受住了机房 IP 的风控考验！
-打开 `~/Temp/yt-cookies.txt`，将其中的全部内容复制粘贴到你的 Yattee 服务端后台即可！
-*(注：如果命令最后报错 `No video formats found`，这是因为 yt-dlp 缺少 JS 引擎解析视频流导致的，**直接无视它**，因为我们需要的 Cookie 已经在报错前被成功导出了！)*
