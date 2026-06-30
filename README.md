@@ -22,7 +22,7 @@ graph TD
     User(["公网用户/客户端"]) -->|"443端口 TLS"| Nginx_Stream("Nginx Stream 预读层<br/>(仅读 SNI，不解密)")
     
     subgraph sni_router ["SNI 路由分发 (443端口)"]
-        Nginx_Stream -->|"SNI = www.swift.org"| Xray("Xray Reality :10086")
+        Nginx_Stream -->|"SNI = <你的 Reality 伪装域名>"| Xray("Xray Reality :10086")
         Nginx_Stream -->|"默认 / 其他 SNI"| Port_4433("Nginx HTTPS :4433")
     end
     
