@@ -10,13 +10,12 @@
 
 整个系统的核心网络架构基于 **Xray Reality + Nginx SNI 前置分流** 模式。该模式能够在 443 端口同时完美兼容"伪装网站（WebDAV/Aria2）"、"私有视频后端（Yattee）"与"科学上网（Xray）"，抗主动探测能力极强。
 
-**关键设计：** 443 端口由 Nginx Stream 层统一接管，通过 TLS SNI 预读（不解密）将流量分发到不同内部端口。所有 HTTPS server 块都**不能直接 listen 443**，必须监听各自的内部端口。
+**关键设计：** 443 端口由 Nginx Stream 层统一接管，通过 TLS SNI 预读（不解密）将流量分发到不同内部端口。所有 HTTPS server 块都**不能直接 listen 443**，必须监听内部端口。非 Xray 流量统一路由到 `4433`，由 Nginx HTTP 层根据 `server_name` 匹配到对应的 server 块。
 
-| 内部端口 | 身份 | 服务的域名 | 承载内容 |
-|---------|------|-----------|---------|
-| `10086` | Xray Reality | SNI 伪装域名 (如 `www.swift.org`) | VLESS 代理隧道 |
-| `4433` | 主站 Nginx HTTPS | `holefrog.dynamic-dns.net` | WebDAV、Aria2、Xray 凭证、404 兜底 |
-| `4434` | Yattee Nginx HTTPS | `yatee.holefrog.dynamic-dns.net` | yattee-server 视频后端反代 |
+| 内部端口 | 身份 | 承载内容 |
+|---------|------|---------|
+| `10086` | Xray Reality | VLESS 代理隧道（SNI 精确匹配伪装域名） |
+| `4433` | Nginx HTTPS（多 server 块并列） | 主站 + Yattee 子域名，按 `server_name` 区分 |
 
 ```mermaid
 graph TD
@@ -24,22 +23,26 @@ graph TD
     
     subgraph sni_router ["SNI 路由分发 (443端口)"]
         Nginx_Stream -->|"SNI = www.swift.org"| Xray("Xray Reality :10086")
-        Nginx_Stream -->|"SNI = yatee.holefrog..."| Yattee_Nginx("Nginx HTTPS :4434<br/>(yattee 专用)")
-        Nginx_Stream -->|"默认 / 其他 SNI"| Main_Nginx("Nginx HTTPS :4433<br/>(主站)")
+        Nginx_Stream -->|"默认 / 其他 SNI"| Port_4433("Nginx HTTPS :4433")
     end
     
     subgraph proxy_service ["代理服务"]
         Xray -->|"VLESS 协议解密"| Target_Internet(("自由互联网"))
     end
     
-    subgraph yattee_service ["Yattee 视频服务 (:4434)"]
-        Yattee_Nginx -->|"/ → 127.0.0.1:8085"| Yattee_Docker["yattee-server Docker"]
+    subgraph http_layer ["Nginx HTTP 层 (:4433) — 按 server_name 匹配"]
+        Port_4433 -->|"server_name = holefrog..."| Main_Server["主站 server 块"]
+        Port_4433 -->|"server_name = yatee.holefrog..."| Yattee_Server["Yattee server 块"]
     end
 
-    subgraph app_service ["主站应用服务 (:4433)"]
-        Main_Nginx -->|"/webdav/"| WebDAV["WebDAV 文件服务"]
-        Main_Nginx -->|"/jsonrpc"| Aria2["Aria2 下载服务"]
-        Main_Nginx -->|"/"| Fallback("404 黑洞防扫描")
+    subgraph app_service ["主站应用服务"]
+        Main_Server -->|"/webdav/"| WebDAV["WebDAV 文件服务"]
+        Main_Server -->|"/jsonrpc"| Aria2["Aria2 下载服务"]
+        Main_Server -->|"/"| Fallback("404 黑洞防扫描")
+    end
+
+    subgraph yattee_service ["Yattee 视频服务"]
+        Yattee_Server -->|"/ → 127.0.0.1:8085"| Yattee_Docker["yattee-server Docker"]
     end
 ```
 
