@@ -33,10 +33,18 @@
 1. **获取 Cookies**：
    - **方法 A（原生命令行法，推荐）**：如果你电脑上安装了 `yt-dlp`，可直接在本地终端提取。
      - **注意：必须使用普通窗口登录**（无痕模式的 Cookie 只在内存中，提取不到）。
-     - 在终端运行以下命令，提取 Firefox 的 Cookie 并**仅过滤出 YouTube 的数据**保存：
+     - 在终端运行以下命令，提取对应的浏览器 Cookie 并**仅过滤出 YouTube 的数据**保存：
+       
+       **如果你使用的是 Chrome 浏览器：**
        ```bash
-       yt-dlp --cookies-from-browser chrome --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download ; grep "youtube" cookies.txt > ~/Temp/yt-cookies.txt
+       yt-dlp --cookies-from-browser chrome --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download ; echo "# Netscape HTTP Cookie File" > ~/Temp/yt-cookies.txt ; grep "youtube" cookies.txt >> ~/Temp/yt-cookies.txt
        ```
+
+       **如果你使用的是 Firefox 浏览器：**
+       ```bash
+       yt-dlp --cookies-from-browser firefox --cookies cookies.txt "https://www.youtube.com/watch?v=jNQXAC9IVRw" --skip-download ; echo "# Netscape HTTP Cookie File" > ~/Temp/yt-cookies.txt ; grep "youtube" cookies.txt >> ~/Temp/yt-cookies.txt
+       ```
+
        *(如果在执行时终端报错 `No video formats found!`，**完全不用理会**！Cookie 在报错前就已经成功提取到了。用文本编辑器打开 `~/Temp/yt-cookies.txt`，复制其全部内容)*
      - **延长寿命秘诀**：提取完成后，千万不要在网页点“退出登录”。直接去浏览器的设置里，手动清除 YouTube.com 的站点数据。这样本地去除了登录态，但远端 Cookie 依然存活！
 
