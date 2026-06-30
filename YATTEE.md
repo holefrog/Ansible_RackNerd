@@ -31,6 +31,7 @@
 由于原生 `yt-dlp` 已不再支持直接通过参数开启 OAuth2（该功能原为已失效的第三方插件），我们目前最稳定绕过风控的方法仍然是向后端注入真实的浏览器 Cookies。
 
 1. **获取 Cookies**：
+   - 🚨 **核心防封锁前提（极其重要）：在开始提取之前，请务必在你的电脑上全程开启全局代理，并连接美国节点（强烈建议直接连接你刚搭建好的本机 VPS Xray 节点）！** 这样能保证 Cookie 诞生的 IP 与服务端 `yt-dlp` 最终使用的 IP 完全一致（跳跃距离为 0），极大降低被 Google 判定为“异地盗用”而秒封的概率。
    - **方法 A（原生命令行法，推荐）**：如果你电脑上安装了 `yt-dlp`，可直接在本地终端提取。
      - **注意：必须使用普通窗口登录**（无痕模式的 Cookie 只在内存中，提取不到）。
      - 在终端运行以下命令，提取对应的浏览器 Cookie 并**仅过滤出 YouTube 的数据**保存：
@@ -65,6 +66,28 @@
 
 ---
 
+## 📺 终极防封方案：使用 Invidious 代理（完全免 Cookie）
+
+如果你在贴入正确的 Cookie 后，点击 `Test Credentials` 依然**死活报错** `Sign in to confirm you’re not a bot`，那说明 **YouTube 已经将你的机房 IP 彻底拉黑**，或者检测到了 Cookie 从你的家庭宽带“瞬移”到机房，触发了秒封机制。
+
+对于这种“绝症”，最一劳永逸的方案是彻底放弃在 VPS 上使用 `yt-dlp` 直连，改为借用公共的 Invidious 实例进行代理抓取：
+
+1. 打开你的 VPS 终端，编辑 Yattee 的环境变量文件：
+   ```bash
+   nano /opt/yattee-server/.env
+   ```
+2. 找到最下面的一行，确保它长这样（如果被注释了请去掉 `#`）：
+   ```env
+   INVIDIOUS_INSTANCE_URL=https://invidious.jing.rocks
+   ```
+   *(注：你也可以换成其他的公共实例，例如 `https://invidious.nerdvpn.de`)*
+3. 保存文件并重启容器：
+   ```bash
+   cd /opt/yattee-server && docker compose up -d
+   ```
+4. **大功告成！** 此时回到 Yattee 后台，你可以**把 YouTube 的 Cookie 彻底清空**，系统会自动把所有的视频解析请求转发给这个公共实例。你再也不会看到那个恶心的机器人验证报错了！
+---
+
 ## 📱 第三步：iPhone / macOS Yattee 客户端对接
 
 1. 在 iPhone 上安装 **Yattee**（TestFlight 2.0 版或 App Store 正式版皆可）。
@@ -88,3 +111,13 @@ Ansible 已部署了 **`yattee-update.timer`** 定时任务，**每周一凌晨 
 cd /opt/yattee-server
 git pull && docker compose up -d --build
 ```
+
+## 🛠️ 排障与运行日志
+
+如果在使用过程中遇到视频无法播放、或者想确认 Invidious 代理是否正常接管了流量，可以通过实时查看容器日志来排查问题。SSH 登录 VPS 后执行：
+
+```bash
+docker logs -f yattee-server
+```
+
+*(使用 `Ctrl + C` 可以退出日志实时查看模式)*

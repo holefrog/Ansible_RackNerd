@@ -18,17 +18,7 @@
     mode: '0600'
   notify: 重启 yattee-server
 
-- name: 清理错误的 yt-dlp.conf
-  ansible.builtin.file:
-    path: "{{ yattee_install_dir }}/yt-dlp.conf"
-    state: absent
-  notify: 重启 yattee-server
 
-- name: 清理错误的 docker-compose.override.yml
-  ansible.builtin.file:
-    path: "{{ yattee_install_dir }}/docker-compose.override.yml"
-    state: absent
-  notify: 重启 yattee-server
 
 - name: 启动 yattee-server 容器[第一次需要较长时间，约5-10分钟，耐心等待]
   ansible.builtin.command:
