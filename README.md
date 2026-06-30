@@ -31,8 +31,8 @@ graph TD
     end
     
     subgraph http_layer ["Nginx HTTP 层 (:4433) — 按 server_name 匹配"]
-        Port_4433 -->|"server_name = holefrog..."| Main_Server["主站 server 块"]
-        Port_4433 -->|"server_name = yattee.holefrog..."| Yattee_Server["Yattee server 块"]
+        Port_4433 -->|"server_name = yourdomain..."| Main_Server["主站 server 块"]
+        Port_4433 -->|"server_name = yattee.yourdomain..."| Yattee_Server["Yattee server 块"]
     end
 
     subgraph app_service ["主站应用服务"]
