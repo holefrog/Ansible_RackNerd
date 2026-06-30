@@ -8,25 +8,38 @@
 
 ## 一、 核心流量架构 (Traffic Flow)
 
-整个系统的核心网络架构基于 **Xray Reality + Nginx SNI 前置分流** 模式。该模式能够在 443 端口同时完美兼容“伪装网站（WebDAV/Aria2）”与“科学上网（Xray）”，抗主动探测能力极强。
+整个系统的核心网络架构基于 **Xray Reality + Nginx SNI 前置分流** 模式。该模式能够在 443 端口同时完美兼容"伪装网站（WebDAV/Aria2）"、"私有视频后端（Yattee）"与"科学上网（Xray）"，抗主动探测能力极强。
+
+**关键设计：** 443 端口由 Nginx Stream 层统一接管，通过 TLS SNI 预读（不解密）将流量分发到不同内部端口。所有 HTTPS server 块都**不能直接 listen 443**，必须监听各自的内部端口。
+
+| 内部端口 | 身份 | 服务的域名 | 承载内容 |
+|---------|------|-----------|---------|
+| `10086` | Xray Reality | SNI 伪装域名 (如 `www.swift.org`) | VLESS 代理隧道 |
+| `4433` | 主站 Nginx HTTPS | `holefrog.dynamic-dns.net` | WebDAV、Aria2、Xray 凭证、404 兜底 |
+| `4434` | Yattee Nginx HTTPS | `yatee.holefrog.dynamic-dns.net` | yattee-server 视频后端反代 |
 
 ```mermaid
 graph TD
-    User(["公网用户/客户端"]) -->|"443端口 HTTPS/Reality"| Nginx_Stream("Nginx Stream 预读层")
+    User(["公网用户/客户端"]) -->|"443端口 TLS"| Nginx_Stream("Nginx Stream 预读层<br/>(仅读 SNI，不解密)")
     
-    subgraph traffic_in ["流量入口 (443端口)"]
-        Nginx_Stream -->|"匹配 SNI 为目标伪装域名"| Xray("Xray Reality")
-        Nginx_Stream -->|"未匹配目标域名"| Nginx_Web("Nginx Web HTTP层")
+    subgraph sni_router ["SNI 路由分发 (443端口)"]
+        Nginx_Stream -->|"SNI = www.swift.org"| Xray("Xray Reality :10086")
+        Nginx_Stream -->|"SNI = yatee.holefrog..."| Yattee_Nginx("Nginx HTTPS :4434<br/>(yattee 专用)")
+        Nginx_Stream -->|"默认 / 其他 SNI"| Main_Nginx("Nginx HTTPS :4433<br/>(主站)")
     end
     
     subgraph proxy_service ["代理服务"]
         Xray -->|"VLESS 协议解密"| Target_Internet(("自由互联网"))
     end
     
-    subgraph app_service ["应用服务 (内部监听 4433)"]
-        Nginx_Web -->|"/webdav/"| WebDAV["WebDAV 文件服务"]
-        Nginx_Web -->|"/jsonrpc"| Aria2["Aria2 下载服务"]
-        Nginx_Web -->|"/"| Fallback("404 黑洞防扫描")
+    subgraph yattee_service ["Yattee 视频服务 (:4434)"]
+        Yattee_Nginx -->|"/ → 127.0.0.1:8085"| Yattee_Docker["yattee-server Docker"]
+    end
+
+    subgraph app_service ["主站应用服务 (:4433)"]
+        Main_Nginx -->|"/webdav/"| WebDAV["WebDAV 文件服务"]
+        Main_Nginx -->|"/jsonrpc"| Aria2["Aria2 下载服务"]
+        Main_Nginx -->|"/"| Fallback("404 黑洞防扫描")
     end
 ```
 
