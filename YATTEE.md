@@ -78,9 +78,9 @@
    ```
 2. 找到最下面的一行，确保它长这样（如果被注释了请去掉 `#`）：
    ```env
-   INVIDIOUS_INSTANCE_URL=https://invidious.jing.rocks
+   INVIDIOUS_INSTANCE_URL=https://invidious.nerdvpn.de
    ```
-   *(注：你也可以换成其他的公共实例，例如 `https://invidious.nerdvpn.de`)*
+   *(注：公共节点有时会失效，如果遇到报错 `Name or service not known`，请前往 [Invidious 官方节点列表](https://api.invidious.io/) 换一个活跃节点，例如 `https://inv.nadeko.net`)*
 3. 保存文件并重启容器：
    ```bash
    cd /opt/yattee-server && docker compose up -d
