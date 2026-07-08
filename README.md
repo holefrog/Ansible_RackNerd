@@ -113,6 +113,7 @@ graph TD
     5. **用户名** 填写：你在 `secrets.yml` 中配置的 `webdav_user`。
     6. **密码** 填写：生成 `webdav_password_hash` 时使用的**原始明文密码**。
 - **Yattee Backend (yattee-server)**：私有化的 YouTube 客户端同步后端，通过 Docker 运行，独立子域名 `yattee.yourdomain.com` 由 Nginx 反代。
+  - **⚠️ 部署前注意**：如果使用 ChangeIP 等动态域名服务，请务必在跑 Ansible 部署前，先登录 ChangeIP 网站（**Services -> DNS Manager**），手动添加一条子域名记录（Host 填 `yattee`，Type 填 `A`，Value 填上服务器公网 IP）。由于部分 DDNS 接口不支持无中生有创建记录，如果不提前加好这条空记录，会导致后续申请 Let's Encrypt 证书时因 `NXDOMAIN` 报错而中断部署。
   - **如何使用 Yattee**：详见 [YATTEE.md](YATTEE.md)
 
 ### 4. VPN (代理层)
