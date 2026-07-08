@@ -83,7 +83,7 @@
    - 验证方式保持为 **`Cookies`**。
    - 将刚才导出的 Cookie 文本粘贴到下方的输入框中。
    - 点击 **`Save (保存)`**。
-   - 在底部随便输入一个 YouTube 视频链接（如 `https://www.youtube.com/watch?v=jNQXAC9IVRw`），点击 **`Test Credentials (测试凭证)`**。只要不再报错 bot，即代表授权成功！
+   - 在底部随便输入一个 YouTube 视频链接（如 `https://www.youtube.com/watch?v=jNQXAC9IVRw`），点击 **`Test`**。只要不再报错 bot，即代表授权成功！
 
 3. *注意：如果未来在使用 Yattee 时再次出现提取失败或无法播放，说明 Cookie 已过期，请重复上述任一步骤重新获取并覆盖。*
 
