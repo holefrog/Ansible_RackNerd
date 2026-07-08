@@ -2,6 +2,9 @@
 
 本文档为 Ansible 自动化部署完成后的**使用操作指南**。所有服务端基础设施（Docker 容器、Nginx 反代、SSL 证书、DDNS）均由 Ansible 一键部署，无需手动配置。
 
+> **⚠️ 部署前特别注意 (针对 ChangeIP 用户)**
+> 如果你使用的是 ChangeIP 等部分动态域名服务，请务必在跑 Ansible 部署前，先登录控制台（**Services -> DNS Manager**），手动添加一条子域名记录（Host 填 `yattee`，Type 填 `A`，Value 填上服务器公网 IP）。由于 ChangeIP 的 API 不支持“无中生有”创建子域名记录，如果不提前加好，会导致后续申请 Let's Encrypt 证书时因找不到该域名而中断部署！
+
 ---
 
 ## 📱 第一步：注册美区谷歌账号（带 2FA）
