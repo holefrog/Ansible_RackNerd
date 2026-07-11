@@ -1,6 +1,7 @@
 location /webdav {
     alias {{ shared_data_dir }};
     autoindex on;
+    charset utf-8;
     
     # 动态引用变量名
     add_after_body /{{ webdav_footer_name }};
