@@ -12,6 +12,14 @@
     group: "{{ web_user }}"
     mode: '0755'
 
+- name: 创建 Aria2 会话持久化文件
+  ansible.builtin.file:
+    path: /etc/aria2/aria2.session
+    state: touch
+    owner: "{{ web_user }}"
+    group: "{{ web_user }}"
+    mode: '0644'
+
 - name: 渲染 Aria2 配置文件
   ansible.builtin.template:
     src: aria2.conf.j2
