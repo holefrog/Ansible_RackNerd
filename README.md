@@ -8,14 +8,14 @@
 
 ## 一、 核心流量架构 (Traffic Flow)
 
-整个系统的核心网络架构基于 **Xray Reality + Nginx SNI 前置分流** 模式。该模式能够在 443 端口同时完美兼容"伪装网站（WebDAV/Aria2）"、"私有视频后端（Yattee）"与"科学上网（Xray）"，抗主动探测能力极强。
+整个系统的核心网络架构基于 **Xray Reality + Nginx SNI 前置分流** 模式。该模式能够在 443 端口同时兼容 WebDAV、Aria2 与 Xray 代理服务。
 
 **关键设计：** 443 端口由 Nginx Stream 层统一接管，通过 TLS SNI 预读（不解密）将流量分发到不同内部端口。所有 HTTPS server 块都**不能直接 listen 443**，必须监听内部端口。非 Xray 流量统一路由到 `4433`，由 Nginx HTTP 层根据 `server_name` 匹配到对应的 server 块。
 
 | 内部端口 | 身份 | 承载内容 |
 |---------|------|---------|
 | `10086` | Xray Reality | VLESS 代理隧道（SNI 精确匹配伪装域名） |
-| `4433` | Nginx HTTPS（多 server 块并列） | 主站 + Yattee 子域名，按 `server_name` 区分 |
+| `4433` | Nginx HTTPS | 主站（WebDAV、Aria2） |
 
 ```mermaid
 graph TD
@@ -31,8 +31,7 @@ graph TD
     end
     
     subgraph http_layer ["Nginx HTTP 层 (:4433) — 按 server_name 匹配"]
-        Port_4433 -->|"server_name = yourdomain..."| Main_Server["主站 server 块"]
-        Port_4433 -->|"server_name = yattee.yourdomain..."| Yattee_Server["Yattee server 块"]
+        Port_4433 -->|"主站域名"| Main_Server["主站 server 块"]
     end
 
     subgraph app_service ["主站应用服务"]
@@ -41,9 +40,6 @@ graph TD
         Main_Server -->|"/"| Fallback("404 黑洞防扫描")
     end
 
-    subgraph yattee_service ["Yattee 视频服务"]
-        Yattee_Server -->|"/ → 127.0.0.1:8085"| Yattee_Docker["yattee-server Docker"]
-    end
 ```
 
 ## 二、 核心逻辑与亮点
@@ -112,11 +108,6 @@ graph TD
     4. **协议** 选择：`HTTPS`。
     5. **用户名** 填写：你在 `secrets.yml` 中配置的 `webdav_user`。
     6. **密码** 填写：生成 `webdav_password_hash` 时使用的**原始明文密码**。
-- **Yattee Backend (yattee-server)**：私有化的 YouTube 客户端同步后端，通过 Docker 运行，独立子域名 `yattee.yourdomain.com` 由 Nginx 反代。
-  - **🚫 避坑警告**：RackNerd VPS 的 IP 信誉极低，用来请求 YouTube 极易触发风控，导致绑定的 Gmail 账号被谷歌直接封锁。**强烈不推荐**在 RackNerd 节点上部署和使用此 Yattee 服务！
-  - **⚠️ 部署前注意**：如果使用 ChangeIP 等动态域名服务，请务必在跑 Ansible 部署前，先登录 ChangeIP 网站（**Services -> DNS Manager**），手动添加一条子域名记录（Host 填 `yattee`，Type 填 `A`，Value 填上服务器公网 IP）。由于部分 DDNS 接口不支持无中生有创建记录，如果不提前加好这条空记录，会导致后续申请 Let's Encrypt 证书时因 `NXDOMAIN` 报错而中断部署。
-  - **如何使用 Yattee**：详见 [YATTEE.md](YATTEE.md)
-
 ### 4. VPN (代理层)
 **职责**：提供隐蔽的网络加密代理隧道（被精细拆分为多个模块保持高可读性）。
 - **安装 (install.yml)**：幂等地调用官方脚本安装最新 Xray Core。

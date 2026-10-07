@@ -12,9 +12,3 @@ fi
 
 RESPONSE=$(curl -s -u "$USER:$PASS" "https://nic.changeip.com/nic/update?u=$USER&p=$PASS&hostname=$DOMAIN&myip=$IP")
 echo "$(date) - IP: $IP - Response: $RESPONSE"
-
-{% if yattee_domain is defined %}
-# 更新 yattee 子域名
-RESPONSE_YATTEE=$(curl -s -u "$USER:$PASS" "https://nic.changeip.com/nic/update?u=$USER&p=$PASS&hostname={{ yattee_domain }}&myip=$IP")
-echo "$(date) - IP: $IP - yattee Response: $RESPONSE_YATTEE"
-{% endif %}
