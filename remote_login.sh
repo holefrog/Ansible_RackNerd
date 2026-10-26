@@ -77,6 +77,7 @@ echo -e "${GREEN}>>> 正在连接 $TARGET_HOST [$HOST] (端口: $PORT)...${NC}"
 ssh-keygen -f "$HOME/.ssh/known_hosts" -R "$HOST" >/dev/null 2>&1 || true
 ssh-keygen -f "$HOME/.ssh/known_hosts" -R "[$HOST]:$PORT" >/dev/null 2>&1 || true
 
-# 激活配色并登入
+# 激活配色并登入 (添加 IdentitiesOnly=yes 避免 ssh-agent 多密钥导致认证超限)
 echo -ne "\e]10;#39FF14\a\e]11;#000000\a"
-$SSH_CMD -p "$PORT" -o StrictHostKeyChecking=no -o ConnectTimeout=10 "root@$HOST"
+$SSH_CMD -p "$PORT" -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -o ConnectTimeout=10 "root@$HOST"
+

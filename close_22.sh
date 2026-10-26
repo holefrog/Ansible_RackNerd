@@ -30,8 +30,8 @@ echo "--------------------------------------------------------"
 # --- 2. 连通性预检 ---
 echo "⏳ 正在通过新端口测试 SSH 握手..."
 
-# 改进：捕获标准错误输出 (2>&1) 以获取详细错误
-SSH_ERROR=$(ssh -i "${KEY_PATH}" -p "${NEW_PORT}" -o ConnectTimeout=5 -o BatchMode=yes "root@${IP}" "exit" 2>&1)
+# 改进：捕获标准错误输出 (2>&1) 以获取详细错误 (加 IdentitiesOnly=yes 避免多密钥认证超限)
+SSH_ERROR=$(ssh -i "${KEY_PATH}" -p "${NEW_PORT}" -o IdentitiesOnly=yes -o ConnectTimeout=5 -o BatchMode=yes "root@${IP}" "exit" 2>&1)
 SSH_STATUS=$?
 
 if [ $SSH_STATUS -eq 0 ]; then

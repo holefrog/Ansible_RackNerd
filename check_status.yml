@@ -7,7 +7,7 @@
   pre_tasks:
     - name: 智能探测目标主机的自定义 SSH 端口 (防 22 端口死锁)
       ansible.builtin.command:
-        cmd: "ssh {% if ansible_ssh_private_key_file is defined %}-i {{ ansible_ssh_private_key_file }}{% endif %} -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no -p {{ ssh_port }} {{ ansible_user }}@{{ ansible_host }} 'echo ok'"
+        cmd: "ssh {% if ansible_ssh_private_key_file is defined %}-i {{ ansible_ssh_private_key_file }}{% endif %} -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=3 -o StrictHostKeyChecking=no -p {{ ssh_port }} {{ ansible_user }}@{{ ansible_host }} 'echo ok'"
       delegate_to: localhost
       register: custom_port_check
       failed_when: false

@@ -1,9 +1,6 @@
 ---
-- name: 导入 SSH 配置与安全加固任务
-  ansible.builtin.import_tasks: ssh.yml
-
-- name: 导入 Fail2ban 暴力破解防护任务
-  ansible.builtin.import_tasks: fail2ban.yml
-
-- name: 导入 Firewalld 防火墙基础配置
+- name: 🛡️ [第 1 步] 导入 UFW 主机防火墙基础安全策略 (放行高位端口并暂留 22 防自锁)
   ansible.builtin.import_tasks: firewall.yml
+
+- name: 🔒 [第 2 步] SSH 密钥硬化、高位端口热切换与 22 端口自动化闭环
+  ansible.builtin.import_tasks: ssh.yml
