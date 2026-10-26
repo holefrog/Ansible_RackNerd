@@ -23,10 +23,11 @@
 
 | 文件 | 作用 | 说明 |
 |---|---|---|
-| `ansible.sh` | 运维交互总入口 | 部署环境校验 / 语法校验 / Deploy / Status 巡检看板 |
+| `apply.sh` | 运维交互总入口 | 部署环境校验 / 语法校验 / 白板机开荒自适应探测与公钥自动注入 / Deploy / Status 巡检看板 |
 | `site.yml` | 部署总 Playbook | 顺序执行 `security`, `infrastructure`, `application`, `vpn` |
 | `check_status.yml` | 健康看板 Playbook | 巡检 CPU、内存、Swap、核心服务、WebDAV 路由及 22 端口闭锁状态 |
 | `close_22.sh` | 应急手动锁门脚本 | 备用工具（正常由 Ansible 部署流自动切断） |
+| `remote_login.sh` | 快捷免密登录脚本 | 零参数默认直连 `vps_primary`，自动激活状态栏配色 |
 | `hosts.yml` | 主机清单 | 仅存真实公网 IP（`ansible_host`），保障直连 |
 | `host_vars/vps_primary/` | 单机变量 | `vars.yml` (端口/Swap/时区/域名等) 与 `secrets.yml` (凭据) |
 | `keys/` | SSH 密钥目录 | 存放私钥对，由 `.gitignore` 保护 |
@@ -63,7 +64,8 @@
 
 ## 四、 核心设计决策 (Decisions Summary)
 
-1. **白板机自适应开荒**：`site.yml` pre_task 先探测 22122 是否可达，不可达则 fallback 到 22 端口进行开荒；新端口就绪后由 Ansible 自动闭环切断 22。
+1. **白板机自适应开荒**：`apply.sh` 前置自检目标主机认证状态。若机器刚重置且私钥无法登录，自动校验 `secrets.yml` 中的 `ansible_ssh_pass`，并调用 `sshpass + ssh-copy-id` 原子注入本地 Ed25519 公钥；密码错误时提供明确指引，密码正确则无缝转入纯密钥加固流水线。
 2. **UFW 守门与零 Fail2ban**：高位端口 22122 + 纯密钥认证，杜绝盲扫打爆日志，彻底移除 Fail2ban 降低资源开销。
 3. **多设备 SSH 公钥支持**：通过 `extra_ssh_authorized_keys` 变量，一次性原子注入多台管理设备公钥。
 4. **严格聚焦 Debian 12**：代码扁平，拒绝虚无的跨平台空壳代码。
+5. **单机专属收敛**：彻底抛弃 `group_vars`，所有单机配置集中在 `host_vars/vps_primary/`，快捷工具零参数自适应。

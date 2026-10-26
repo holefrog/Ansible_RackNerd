@@ -6,7 +6,7 @@
 
 - **目标系统**：Debian 12 64-bit（RackNerd 等主流 KVM VPS）。
 - **执行方式**：Ansible Playbook（主控端为 Linux / macOS，托管端基于 SSH 密钥连接）。
-- **执行入口**：常规操作优先调用 `./ansible.sh`（内置语法与环境校验）。
+- **执行入口**：常规操作优先调用 `./apply.sh`（内置语法校验、白板机开荒探测与部署总入口）。
 
 ---
 

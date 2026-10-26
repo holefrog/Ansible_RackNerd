@@ -1,10 +1,43 @@
 # Ansible RackNerd 系统全景架构解析
 
-本项目是一个面向个人 VPS 节点（如 RackNerd）的高度模块化、声明式的自动化部署系统。核心思路是 **“主机差异化”**、**“零硬编码”** 与 **“安全闭环”**，经过一系列深入重构，目前已经形成了一套极简而强悍的基础设施。
+本项目是一个面向个人 VPS 节点（如 RackNerd）的高度模块化、声明式的自动化部署系统。核心思路是 **“单机专属”**、**“零硬编码”** 与 **“安全闭环”**，经过深度重构，全面对齐 GCP 极简基建规范，彻底移除了 Fail2ban、跨系统兼容层等冗余设计，形成了一套自愈、轻量、高可用的基础设施。
 
 **运行环境要求：**
 - **目标主机**：RackNerd 等主流 KVM 架构 VPS
 - **目标 OS**：Debian 12 64 Bit
+
+---
+
+## 零、 快速开荒与日常运维 (QuickStart)
+
+### 1. 目标主机重置与首次开荒
+1. **配置单机变量**：
+   - 检查 [host_vars/vps_primary/vars.yml](host_vars/vps_primary/vars.yml)，确认公网 IP、业务域名与自定义高位 SSH 端口（默认 `22122`）。
+   - 打开 [host_vars/vps_primary/secrets.yml](host_vars/vps_primary/secrets.yml)，填入 VPS 重置后服务商控制台或邮件提供的最新 root 初始密码：
+     ```yaml
+     ansible_ssh_pass: "你的最新VPS密码"
+     ```
+2. **执行一键自动化部署**：
+   ```bash
+   ./apply.sh
+   ```
+   - 选择 `1) Deploy`。
+   - **自适应开荒**：`apply.sh` 会自动探测连通性。若检测到目标主机为全新白板机（私钥不可达但 22 端口通畅），会自动利用 `ansible_ssh_pass` 通过 `sshpass + ssh-copy-id` 原子注入本地 Ed25519 管理公钥（`keys/vps_primary_key.pub`）；若密码失效则会给出精准指引。
+   - **全自动加固与闭环**：公钥注入完成后，Ansible 自动接管执行：全量系统升级、BBR/Swap、切换 SSH 监听至 `22122` 高位端口、禁用密码登录、部署业务容器，并在验证新端口就绪后**自动在 UFW 中切断 22 端口**，完成安全闭环。
+
+### 2. 日常运维与监控
+- **一键快捷免密登录**：
+  ```bash
+  ./remote_login.sh
+  ```
+  无需输入参数，默认直连 `vps_primary`，并自动激活状态栏配色。
+- **健康状态看板巡检**：
+  ```bash
+  ./apply.sh    # 直接回车默认执行 2 Status (或运行 ansible-playbook check_status.yml)
+  ```
+  实时审计 CPU 负载、物理内存、Swap 占用、核心服务运行状态以及 SSH 22 端口关闭状态。
+
+---
 
 ## 一、 核心流量架构 (Traffic Flow)
 
@@ -39,17 +72,22 @@ graph TD
         Main_Server -->|"/jsonrpc"| Aria2["Aria2 下载服务"]
         Main_Server -->|"/"| Fallback("404 黑洞防扫描")
     end
-
 ```
+
+---
 
 ## 二、 核心逻辑与亮点
 
 * **单机精准架构**：完全弃用 `group_vars`，所有单机配置严格收敛至 `host_vars/vps_primary/`，消除全局变量污染，精准可控。
 * **网络连通与业务域名分离**：在 `hosts.yml` 中强制使用公网 IP（`ansible_host`）以保障底层的 SSH 连接稳定性，而在 `host_vars` 中将域名抽离为纯业务变量（`domain`）。这彻底解决了全新主机部署时，因 DNS 记录尚未生效而导致 Ansible 无法连接的“鸡生蛋”困境。
+* **自适应开荒与端口闭环**：`apply.sh` 自动处理白板机密码开荒与公钥注入；Playbook 在验证新端口就绪后自动闭环硬封 22 端口，全流程零人工二次干预。
+* **极简安全基线 (零 Fail2ban 开销)**：高位端口（22122）+ 纯密钥认证，彻底杜绝暴力破解，免去 Fail2ban 守护进程常驻的内存与磁盘 IO 开销。
 * **WebDAV 管理增强**：通过 Nginx `add_after_body` 注入自定义脚本，实现网页端图标预览及**路径纠偏后的直接删除**功能。
 * **Xray 自动化闭环**：一键部署并同步生成 JSON、VLESS 链接及二维码，彻底消除手动拼写的风险。
 * **SSL 自动化 (零竞态)**：内置 Certbot 逻辑，申请证书前自动关停 Nginx 以释放 80 端口，解决首次部署的端口冲突。
-* **三重严格校验**：`ansible.sh` 集成代码执行与语法校验逻辑，从根源杜绝生产崩溃。
+* **三重严格校验**：`apply.sh` 集成代码执行与语法校验逻辑，从根源杜绝生产崩溃。
+
+---
 
 ## 三、 项目组织与环境变量
 
@@ -58,20 +96,22 @@ graph TD
 ````text
 ├── ansible.cfg               # 性能优化配置 (Pipelining, ControlMaster)
 ├── check_status.yml          # VPS 资源与业务健康看板
-├── ansible.sh                # 自动化部署入口脚本
-├── hosts.yml                 # 主机清单 (按业务组划分，仅保留 IP 保障 SSH 连通)
+├── apply.sh                  # 自动化部署与运维总入口
+├── hosts.yml                 # 主机清单 (仅保留实际公网 IP 保障 SSH 直连)
 ├── host_vars                 # 主机级变量目录 (变量隔离存放)
-│   └── vps_primary
-│       ├── secrets.yml       # 敏感信息 (密码哈希等，不入公用库)
-│       └── vars.yml          # 单机基础配置 (域名、端口、用户名等)
+│   └── vps_primary
+│       ├── secrets.yml       # 敏感凭据 (密码哈希、SSH密码等，受 .gitignore 保护)
+│       └── vars.yml          # 单机基础配置 (域名、端口 22122、用户名等)
 ├── keys                      # 私钥目录 (不参与变量解析，更安全)
 ├── roles                     # 功能角色目录 (极致解耦)
-│   ├── application           # 应用层 (Aria2/WebDAV)
-│   ├── infrastructure        # 基础层 (Nginx 骨架, DDNS, 系统优化)
-│   ├── security              # 安全层 (SSH 强化, 防火墙, Fail2ban)
-│   └── vpn                   # 代理层 (Xray 安装与订阅分发)
+│   ├── application           # 应用层 (Aria2/WebDAV)
+│   ├── infrastructure        # 基础层 (系统初始化, BBR/Swap, 自动更新, Nginx, DDNS)
+│   ├── security              # 安全层 (UFW 防火墙, SSH 22122 硬化与自动切断 22)
+│   └── vpn                   # 代理层 (Xray 安装与订阅分发)
 └── site.yml                  # 部署总入口 (挂载所有 Roles)
 ````
+
+---
 
 ## 四、 Roles 分工深度解析
 
@@ -79,14 +119,16 @@ graph TD
 
 ### 1. Security (安全壁垒)
 **职责**：系统开荒后的第一道防线。
-- **UFW 防火墙**：初始化系统防火墙，放行高位 SSH、80 与 443 业务端口，所有内部端口（如 10086, 6800, 4433）严格对公网隐身。
-- **SSH 22122 极简硬化与自动闭环**：原子分发管理公钥，切换至 22122 高位端口，全量禁用密码认证与空密码，限制 root 密码登录。验证新端口连通后，由 Ansible 自动在 UFW 中切断 22 端口，达成零人工介入的安全闭环（零 Fail2ban 开销）。
+- **UFW 防火墙 (firewall.yml)**：初始化系统防火墙，放行高位 SSH（22122）、80 与 443 业务端口，所有内部端口（如 10086, 6800, 4433）严格对公网隐身。开荒期间暂留 22 端口防自锁。
+- **SSH 22122 极简硬化与自动闭环 (ssh.yml)**：原子分发管理公钥（支持 `extra_ssh_authorized_keys` 多设备公钥），切换至 22122 高位端口，全量禁用密码认证与空密码，限制 root 密码登录。验证新端口连通后，由 Ansible 自动在 UFW 中切断 22 端口，达成零人工介入的安全闭环（零 Fail2ban 开销）。
 
 ### 2. Infrastructure (基础设施)
 **职责**：纯粹的运行环境“容器”，不涉及任何上层业务逻辑。
-- **System**：开启 BBR 加速，设置虚拟内存 (Swap)，配置日志轮转 (Logrotate)。
-- **Nginx 基建**：安装 Nginx，配置 443 端口的 Stream 预读转发。在内部的 HTTPS 层（监听 4433），仅提供一个“空壳”骨架 `site.conf.j2`，它通过 `include /etc/nginx/conf.d/*.locations.d/*.conf;` 动态加载挂载进来的子业务模块。
-- **SSL / DDNS**：调用 Certbot 申请证书，自动配置动态域名解析。
+- **系统初始化 (system.yml)**：全量升级 Debian 12 软件包、安装运维工具、配置时区与快捷别名，并配置日志轮转 (Logrotate)。
+- **内核优化与虚拟内存 (bbr_swap.yml)**：启用 BBR 内核拥塞控制与 fq 队列调度，设置 2GB Swap 虚拟内存及内存缓存策略。
+- **自动安全更新 (auto_updates.yml)**：启用 `unattended-upgrades` 每日静默安装底层系统安全补丁。
+- **Nginx 基建 (nginx.yml)**：安装 Nginx，配置 443 端口的 Stream 预读转发。在内部 HTTPS 层（监听 4433），仅提供一个“空壳”骨架 `site.conf.j2`，它通过 `include /etc/nginx/conf.d/*.locations.d/*.conf;` 动态加载挂载进来的子业务模块。
+- **SSL / DDNS (ddns.yml)**：调用 Certbot 申请证书，自动配置动态域名解析。
 
 ### 3. Application (应用层)
 **职责**：提供面向用户的具体网络业务。
@@ -109,7 +151,6 @@ graph TD
     6. **密码** 填写：生成 `webdav_password_hash` 时使用的**原始明文密码**。
 
 ### 4. VPN (代理层)
-
 **职责**：提供隐蔽的网络加密代理隧道（被精细拆分为多个模块保持高可读性）。
 - **安装 (install.yml)**：幂等地调用官方脚本安装最新 Xray Core。
 - **密钥生成 (keys.yml)**：**亮点机制**。在服务器本地全自动生成并保存 UUID 及 X25519 Reality 公私钥，附带损坏自愈修复功能。
@@ -122,16 +163,20 @@ graph TD
     3. **电脑端 (Windows/macOS)**：打开客户端（如 v2rayN, Vfox, Hiddify）。访问网址 `https://你的主域名/<私密路径>/xray_link.txt`，复制全部文本内容（即 `vless://...`），然后在客户端中选择“从剪贴板导入”。
     4. **高级用法 (原生配置)**：访问 `https://你的主域名/<私密路径>/xray_client.json` 下载标准的 JSON 配置文件供核心直接使用。
 
+---
+
 ## 五、 运维与健康监控 (check_status.yml)
 
 项目自带了一套强大的健康审计看板，独立于部署流程外使用。
-运行 `ansible-playbook check_status.yml` 即可获取。
+运行 `./apply.sh`（选 2）或 `ansible-playbook check_status.yml` 即可获取。
 
 通过探测内部端口及 HTTPS 协议响应，它真实反馈：
 1. **系统进程 (Systemd)**: Nginx, Xray, Aria2, UFW 的底层运行状态。
 2. **路由连通性**: Nginx 内部的 WebDAV 是否能正常响应访问。
-3. **安全审计**: SSH 22 端口是否已被彻底屏蔽。
+3. **安全审计**: SSH 22 端口是否已被彻底屏蔽（安全闭环验证）。
 4. **资源占用**: 物理内存 Swap 的开启状况及物理硬盘剩余空间。
+
+---
 
 ## 六、 故障排查手册
 
@@ -173,4 +218,3 @@ www.apple.com     ──DNS──▶ 同一 Akamai 边缘节点集群
 echo | openssl s_client -connect <候选域名>:443 -servername <候选域名> 2>/dev/null \
   | openssl x509 -noout -subject -text | grep -E 'Subject:|DNS:'
 ```
-
