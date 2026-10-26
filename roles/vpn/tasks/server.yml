@@ -4,8 +4,8 @@
   ansible.builtin.template:
     src: xray.json.j2
     dest: /usr/local/etc/xray/config.json
-    owner: "{{ vpn_user | default('nobody') }}"
-    group: "{{ vpn_group | default('nogroup') }}"
+    owner: "{{ vpn_user | default('xray') }}"
+    group: "{{ vpn_group | default('xray') }}"
     mode: '0644'
   notify: Restart xray
 
@@ -20,8 +20,8 @@
     dest: /etc/systemd/system/xray.service.d/override.conf
     content: |
       [Service]
-      User={{ vpn_user | default('nobody') }}
-      Group={{ vpn_group | default('nogroup') }}
+      User={{ vpn_user | default('xray') }}
+      Group={{ vpn_group | default('xray') }}
     mode: '0644'
   notify: Restart xray
 

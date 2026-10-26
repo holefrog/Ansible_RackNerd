@@ -9,7 +9,7 @@
     update_cache: true
 
 - name: Install basic maintenance tools
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name:
       - jq
       - cron
@@ -34,7 +34,7 @@
           missingok
           notifempty
           size 50M
-          su {{ web_user | default('root') }} {{ web_user | default('root') }}
+          su {{ web_user | default('www-data') }} {{ web_user | default('www-data') }}
       }
     mode: '0644'
 

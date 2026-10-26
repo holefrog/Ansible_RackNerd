@@ -1,7 +1,7 @@
 ---
 # v6
 - name: Install Nginx, Stream module and Certbot
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name:
       - nginx
       - libnginx-mod-stream
@@ -16,7 +16,7 @@
   ignore_errors: "{{ ansible_check_mode }}"
 
 - name: Automatically install nginx-full if http_addition_module is missing
-  ansible.builtin.package:
+  ansible.builtin.apt:
     name: nginx-full
     state: present
   when: >

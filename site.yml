@@ -3,8 +3,7 @@
   hosts: racknerd
   become: true
   # 【⚠️ 核心架构警告】：切勿开启默认的 gather_facts！
-  # 必须保持 gather_facts: false。这是为了防止在缺少 python3-dnf 的部分老旧系统中，
-  # Ansible 会在第一步自动收集 facts 时就直接报错崩溃。我们需要先用 raw 模块修环境，再收集信息。
+  # 必须保持 gather_facts: false。先用 raw 模块修复 python3-apt 基础环境，再显式收集 facts，防止缺少依赖时崩溃。
   gather_facts: false
 
   pre_tasks:
