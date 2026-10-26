@@ -1,10 +1,7 @@
-# hosts.yml
+# hosts.yml.sample
 all:
   children:
-    racknerd:  # 创建一个名为 racknerd 的组
+    racknerd:  # RackNerd 单主机组
       hosts:
         vps_primary:
-          ansible_host: x.x.x.x
-          
-        vps_secondary:
-          ansible_host: y.y.y.y  # 第一台主机的实际 IP
+          ansible_host: 192.227.xxx.xxx  # 目标 VPS 实际公网 IP

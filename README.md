@@ -44,7 +44,7 @@ graph TD
 
 ## 二、 核心逻辑与亮点
 
-* **多机架构设计**：完全弃用 `group_vars`，通过 `host_vars/主机名/` 实现多台 VPS 的精准控制，支持不同域名、端口及密钥配置。
+* **单机精准架构**：完全弃用 `group_vars`，所有单机配置严格收敛至 `host_vars/vps_primary/`，消除全局变量污染，精准可控。
 * **网络连通与业务域名分离**：在 `hosts.yml` 中强制使用公网 IP（`ansible_host`）以保障底层的 SSH 连接稳定性，而在 `host_vars` 中将域名抽离为纯业务变量（`domain`）。这彻底解决了全新主机部署时，因 DNS 记录尚未生效而导致 Ansible 无法连接的“鸡生蛋”困境。
 * **WebDAV 管理增强**：通过 Nginx `add_after_body` 注入自定义脚本，实现网页端图标预览及**路径纠偏后的直接删除**功能。
 * **Xray 自动化闭环**：一键部署并同步生成 JSON、VLESS 链接及二维码，彻底消除手动拼写的风险。
@@ -53,7 +53,7 @@ graph TD
 
 ## 三、 项目组织与环境变量
 
-系统抛弃了老旧的 `group_vars` 设计，转而使用 `host_vars` 精准控制多台主机的差异化配置。
+系统抛弃了老旧的 `group_vars` 设计，单机配置独立存放于 `host_vars/vps_primary/`。
 
 ````text
 ├── ansible.cfg               # 性能优化配置 (Pipelining, ControlMaster)

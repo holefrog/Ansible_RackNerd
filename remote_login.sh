@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# remote_login.sh - 多机版独立登录工具
+# remote_login.sh - 单机免密快捷登录工具 (默认直连 vps_primary)
 
 set -euo pipefail
 
@@ -12,18 +12,19 @@ NC='\033[0m'
 
 error() { echo -e "${RED}[ERROR] $1${NC}" >&2; exit 1; }
 
-# 检查输入参数
-if [ $# -lt 1 ]; then
-    echo -e "${GREEN}用法: $0 <主机名>${NC}"
-    echo -e "可选主机: $(ls host_vars | tr '\n' ' ')"
-    exit 1
-fi
-
-TARGET_HOST=$1
+# 默认指向唯一单机 vps_primary (无需手动输入参数)
+TARGET_HOST="${1:-vps_primary}"
 HOST_DIR="host_vars/$TARGET_HOST"
 
 if [ ! -d "$HOST_DIR" ]; then
-    error "未找到主机目录: $HOST_DIR"
+    # 若指定的 host 不存在，自动探测 host_vars 下的第一个主机
+    DETECTED_HOST=$(ls -1 host_vars 2>/dev/null | head -n 1)
+    if [[ -n "$DETECTED_HOST" && -d "host_vars/$DETECTED_HOST" ]]; then
+        TARGET_HOST="$DETECTED_HOST"
+        HOST_DIR="host_vars/$TARGET_HOST"
+    else
+        error "未找到主机目录: $HOST_DIR"
+    fi
 fi
 
 # ==========================================================
@@ -45,11 +46,10 @@ get_v() {
 VARS_FILE="$HOST_DIR/vars.yml"
 SEC_FILE="$HOST_DIR/secrets.yml"
 
-# 1. 获取连接地址 (优先从 vars.yml 读 domain，读不到则从 hosts.yml 读 ansible_host)
-HOST=$(get_v "domain" "$VARS_FILE")
+# 1. 获取连接地址 (优先使用 hosts.yml 的真实公网 IP，解耦 DNS 依赖；读不到回退 vars.yml domain)
+HOST=$(awk -v target="^[ \t]*${TARGET_HOST}:[ \t]*$" '$0 ~ target {in_host=1; next} in_host && /^[ \t]*ansible_host:/ {print $2; exit}' hosts.yml | tr -d '"'\''')
 if [[ -z "$HOST" ]]; then
-    HOST=$(get_v "$TARGET_HOST" "hosts.yml") # 简单处理：假设 hosts.yml 里主机名后面直接跟着 IP
-    [[ -z "$HOST" ]] && HOST=$(get_v "ansible_host" "hosts.yml") # 或者精确查找
+    HOST=$(get_v "domain" "$VARS_FILE")
 fi
 
 # 2. 获取端口

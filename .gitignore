@@ -132,7 +132,7 @@ test_config.ini
 
 # 本地开发脚本
 *.sh
-!deploy.sh
+!apply.sh
 !ansible.sh
 !remote_login.sh
 !close_22.sh

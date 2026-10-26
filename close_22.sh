@@ -1,13 +1,8 @@
 #!/bin/bash
 
 # --- 1. 配置提取 ---
-# 消除硬编码：支持传参，默认提取 hosts.yml 中的第一个主机名
-if [ -n "${1:-}" ]; then
-    TARGET="$1"
-else
-    TARGET=$(awk '/^[a-zA-Z0-9_-]+:/ && !/all:/ {print $1; exit}' hosts.yml | tr -d ':')
-    [[ -z "$TARGET" ]] && TARGET="vps_primary"
-fi
+# 单机默认直接连接 vps_primary (支持通过参数覆盖)
+TARGET="${1:-vps_primary}"
 VAR_FILE="host_vars/${TARGET}/vars.yml"
 
 if [ ! -f "$VAR_FILE" ]; then
