@@ -15,6 +15,7 @@ ssh_port: 22122                         # 部署后修改的自定义高位 SSH 
 domain: "your-domain.com"
 email: "your-email@example.com"
 web_root: "/var/www/{{ domain }}"
+web_user: "www-data"                     # Web 运行用户 (Debian 12 默认为 www-data)
 ssl_cert_dir: "/etc/letsencrypt/live"
 shared_data_dir: "/var/www/downloads"   # Aria2/WebDAV 共享存储路径
 xray_path_url: "xray_sec_dl"            # Xray 客户端配置下载的隐藏 URL 路径

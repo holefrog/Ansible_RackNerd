@@ -1,8 +1,12 @@
 ---
 # v6
-- name: Install Nginx and Certbot
+- name: Install Nginx, Stream module and Certbot
   ansible.builtin.package:
-    name: "{{ ['nginx', 'certbot', 'python3-certbot-nginx'] + (nginx_extra_packages | default([])) }}"
+    name:
+      - nginx
+      - libnginx-mod-stream
+      - certbot
+      - python3-certbot-nginx
     state: present
 
 - name: Get Nginx compile parameters
@@ -106,6 +110,6 @@
 
 - name: Force activate Certbot auto-renewal timer
   ansible.builtin.systemd:
-    name: "{{ certbot_timer_name }}"
+    name: certbot.timer
     state: started
     enabled: true
