@@ -81,4 +81,3 @@
           - "[SSH 22 端口] {% if ssh_22_check.msg is defined and 'Timeout' in ssh_22_check.msg %}🔒 已切断 (安全闭环已生效){% else %}⚠️ 仍开启 (有风险){% endif %}"
           - "{% if ssh_22_check.msg is defined and 'Timeout' in ssh_22_check.msg %}>>> 提示：默认端口已封禁，防线固若金汤！{% else %}>>> 提示：默认 22 端口未切断，可重新执行部署或运行 ./close_22.sh 加固。{% endif %}"
           - "===================================="
-          - "===================================="

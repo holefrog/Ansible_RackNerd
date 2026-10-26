@@ -38,14 +38,11 @@ if [ $SSH_STATUS -eq 0 ]; then
     echo "✅ 握手成功！新端口 ${NEW_PORT} 已就绪。"
     echo "🛠️  正在调用 Ansible 执行防火墙指令..."
     
-    # 执行 Ansible CLI 指令关闭 22 端口
-    ansible "${TARGET}" -m firewalld -a "port=22/tcp state=disabled permanent=true immediate=true" \
+    # 执行 Ansible CLI 指令关闭 22 端口 (基于 Debian 12 UFW 删除 22 放行规则)
+    ansible "${TARGET}" -m community.general.ufw -a "rule=allow port=22 proto=tcp delete=true" \
         --become -e "ansible_port=${NEW_PORT}"
 
-    ansible "${TARGET}" -m firewalld -a "service=ssh state=disabled permanent=true immediate=true" \
-        --become -e "ansible_port=${NEW_PORT}"
-
-    echo -e "\n🎉 任务成功完成！22 端口已彻底关闭。"
+    echo -e "\n🎉 任务成功完成！22 端口已彻底切断闭门。"
 else
     # 打印详细的错误信息
     echo -e "\n❌ 无法通过端口 ${NEW_PORT} 连接到服务器！"
