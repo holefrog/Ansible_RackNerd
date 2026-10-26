@@ -26,7 +26,6 @@
 | `apply.sh` | 运维交互总入口 | 部署环境校验 / 语法校验 / 白板机开荒自适应探测与公钥自动注入 / Deploy / Status 巡检看板 |
 | `site.yml` | 部署总 Playbook | 顺序执行 `security`, `infrastructure`, `application`, `vpn` |
 | `check_status.yml` | 健康看板 Playbook | 巡检 CPU、内存、Swap、核心服务、WebDAV 路由及 22 端口闭锁状态 |
-| `close_22.sh` | 应急手动锁门脚本 | 备用工具（正常由 Ansible 部署流自动切断） |
 | `remote_login.sh` | 快捷免密登录脚本 | 零参数默认直连 `vps_primary`，自动激活状态栏配色 |
 | `hosts.yml` | 主机清单 | 仅存真实公网 IP（`ansible_host`），保障直连 |
 | `host_vars/vps_primary/` | 单机变量 | `vars.yml` (端口/Swap/时区/域名等) 与 `secrets.yml` (凭据) |
