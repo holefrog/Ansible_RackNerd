@@ -126,13 +126,12 @@ if [[ "$MODE" == "Deploy" ]]; then
     SHOW_PORT=$(awk '/^ssh_port:/ {print $2; exit}' host_vars/*/vars.yml 2>/dev/null || echo "未知")
     
     echo "========================================================"
-    echo "⚠️  【安全提醒】"
-    echo "本次部署已配置:"
-    echo "自定义 SSH 端口：[${SHOW_PORT}]"
+    echo "🎉 【部署安全闭环通知】"
+    echo "本次部署已全面完成安全加固:"
+    echo "1. 自定义 SSH 端口：[${SHOW_PORT}]"
+    echo "2. 默认 22 端口：已通过 UFW 自动闭环切断硬封 (防扫防爆破)"
     echo ""
-    echo "为防止您意外被锁在服务器外，22 端口暂时保留。"
-    echo "请务必在新开的终端中测试能否通过新端口登录服务器。"
-    echo "确认无误后，请手动执行以下命令彻底关闭 22 端口："
-    echo "👉 ./close_22.sh"
+    echo "若遇极端异常需手动重试切断，可执行备用脚本: ./close_22.sh"
+    echo "日常运维状态巡检请运行: ./ansible.sh (选 2 Status)"
     echo "========================================================"
 fi

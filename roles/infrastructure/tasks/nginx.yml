@@ -17,7 +17,6 @@
     state: present
   when: >
     not ansible_check_mode and
-    ansible_os_family == 'Debian' and
     infrastructure_nginx_v_info.rc is defined and infrastructure_nginx_v_info.rc == 0 and
     'with-http_addition_module' not in (infrastructure_nginx_v_info.stderr | default('')) and
     'with-http_addition_module' not in (infrastructure_nginx_v_info.stdout | default(''))
