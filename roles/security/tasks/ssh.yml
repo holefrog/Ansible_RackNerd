@@ -1,21 +1,31 @@
 ---
-# 必须先部署公钥，再禁用密码
-- name: Deploy local public key to remote authorized_keys
+# roles/security/tasks/ssh.yml
+# 执行顺序：部署公钥 → 改端口/禁密码/禁空密码/限root → 重启sshd → 验证新端口 → 切换连接变量 → 闭环切断22端口
+
+# 必须先部署公钥，再禁用密码——防止锁死自己
+- name: Deploy authorized public keys (primary + extra)
   ansible.posix.authorized_key:
     user: "{{ ansible_user }}"
     state: present
-    key: "{{ lookup('file', ansible_ssh_private_key_file + '.pub') }}"
+    key: "{{ ([lookup('file', ansible_ssh_private_key_file + '.pub')] + (extra_ssh_authorized_keys | default([]))) | join('\n') }}"
 
-- name: Configure SSH port and disable password authentication
+- name: Configure SSH hardening (port / auth / root)
   ansible.builtin.lineinfile:
     path: /etc/ssh/sshd_config
     regexp: "{{ item.regexp }}"
     line: "{{ item.line }}"
     mode: '0600'
   loop:
+    # ① 改端口：切到高位非标端口，防止盲扫打爆 auth.log
     - { regexp: '^#?Port', line: "Port {{ ssh_port }}" }
+    # ② 禁密码登录
     - { regexp: '^#?PasswordAuthentication', line: "PasswordAuthentication no" }
+    # ③ 禁空密码（额外防线）
+    - { regexp: '^#?PermitEmptyPasswords', line: "PermitEmptyPasswords no" }
+    # ④ 仅允许公钥认证
     - { regexp: '^#?PubkeyAuthentication', line: "PubkeyAuthentication yes" }
+    # ⑤ 禁 root 密码登录 (允许密钥登录，彻底封死暴力破解)
+    - { regexp: '^#?PermitRootLogin', line: "PermitRootLogin prohibit-password" }
   notify: Restart sshd
 
 - name: Handle Debian 12 ssh.socket conflict
@@ -24,14 +34,36 @@
     state: stopped
     enabled: false
   failed_when: false
-  when: ansible_os_family == 'Debian'
 
 - name: Ensure standalone SSH service is enabled
   ansible.builtin.systemd:
     name: ssh
     enabled: true
   failed_when: false
-  when: ansible_os_family == 'Debian'
 
+# 立即刷新 handler 使 sshd 重启生效，再验证新端口
 - name: Flush handlers to apply SSHD changes immediately
   ansible.builtin.meta: flush_handlers
+
+- name: 等待新 SSH 端口激活就绪 (验证新端口连通性)
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: "{{ ssh_port }}"
+    timeout: 15
+    state: started
+  delegate_to: localhost
+
+- name: 切换 Ansible 连接变量至新端口
+  ansible.builtin.set_fact:
+    ansible_port: "{{ ssh_port }}"
+  # noqa: var-naming[no-role-prefix]
+
+- name: 强制重置 SSH 现有长连接以激活新端口 (清除 ControlPersist 缓存)
+  ansible.builtin.meta: reset_connection
+
+- name: 🔒 部署完成闭环：彻底切断 UFW 默认 22 端口
+  community.general.ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+    delete: true

@@ -1,0 +1,53 @@
+---
+# roles/infrastructure/tasks/bbr_swap.yml
+# 系统级内核优化：BBR 拥塞控制 + Swap 虚拟内存
+
+- name: Enable BBR kernel congestion control and optimize memory
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    sysctl_set: true
+  loop:
+    # BBR 算法：有效提升带宽利用率，降低延迟
+    - {key: 'net.core.default_qdisc', value: 'fq'}
+    - {key: 'net.ipv4.tcp_congestion_control', value: 'bbr'}
+    # 内存策略：低 Swap 使用率 + 提高 VFS 缓存命中
+    - {key: 'vm.swappiness', value: '10'}
+    - {key: 'vm.vfs_cache_pressure', value: '50'}
+
+- name: Check if Swap is already active
+  ansible.builtin.command: swapon --show
+  register: infrastructure_swapon_output
+  changed_when: false
+
+- name: Configure Swap virtual memory
+  when: "'/swapfile' not in infrastructure_swapon_output.stdout"
+  block:
+    - name: Create swap file
+      ansible.builtin.command:
+        cmd: "dd if=/dev/zero of=/swapfile bs=1M count={{ swap_size_mb | default(2048) }}"
+        creates: /swapfile
+      changed_when: true
+
+    - name: Set secure permissions for swap file
+      ansible.builtin.file:
+        path: /swapfile
+        mode: '0600'
+        owner: root
+        group: root
+
+    - name: Format swap file
+      ansible.builtin.command: mkswap /swapfile
+      changed_when: true
+
+    - name: Activate swap file
+      ansible.builtin.command: swapon /swapfile
+      changed_when: true
+
+    - name: Ensure swap configuration is persistent in fstab
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '^/swapfile'
+        line: '/swapfile none swap sw 0 0'
+        state: present

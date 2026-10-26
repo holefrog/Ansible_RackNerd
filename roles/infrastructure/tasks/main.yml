@@ -1,9 +1,23 @@
 ---
-- name: 导入系统基础优化任务
+# roles/infrastructure/tasks/main.yml
+# 基础设施执行顺序：
+#   1. system.yml       — 全量包更新 / 基础工具 / 时区 / 别名 / 日志轮转
+#   2. bbr_swap.yml     — BBR 内核拥塞控制 + Swap 虚拟内存
+#   3. auto_updates.yml — 自动安全更新静默升级
+#   4. nginx.yml        — Nginx 服务部署与 Stream SNI 预读代理骨架
+#   5. ddns.yml         — DDNS 动态域名解析同步
+
+- name: 🖥️ [第 1 步] 系统初始化 (全量更新 / 基础工具 / 时区 / 别名 / 日志轮转)
   ansible.builtin.import_tasks: system.yml
 
-- name: 导入 Nginx 服务部署任务
+- name: ⚡ [第 2 步] 启用 BBR 内核拥塞控制并配置 Swap 虚拟内存
+  ansible.builtin.import_tasks: bbr_swap.yml
+
+- name: 🔄 [第 3 步] 启用系统自动安全更新 (unattended-upgrades)
+  ansible.builtin.import_tasks: auto_updates.yml
+
+- name: 🌐 [第 4 步] 导入 Nginx 服务与 SNI 分流骨架
   ansible.builtin.import_tasks: nginx.yml
 
-- name: 导入 DDNS 动态域名任务
+- name: 📡 [第 5 步] 导入 DDNS 动态域名同步任务
   ansible.builtin.import_tasks: ddns.yml

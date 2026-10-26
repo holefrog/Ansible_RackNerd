@@ -35,16 +35,14 @@
     - name: Gather facts after python environment is ready
       ansible.builtin.setup:
 
-    - name: Load OS-specific variables
-      ansible.builtin.include_vars: "vars/{{ ansible_os_family }}.yml"
-  # 必须通过 roles 关键字挂载你写的任务文件夹
+  # 必须通过 roles 关键字挂载任务角色
   roles:
-    - security          # 执行 SSH 安全加固与公钥部署
-    - infrastructure    # 执行系统更新、BBR、Nginx、WebDAV、DDNS
-    - application       # 执行 Aria2 安装
+    - security          # 执行 UFW 防火墙与 SSH 22122 高位硬化 (闭环切断22)
+    - infrastructure    # 执行系统更新、BBR/Swap、自动安全更新、Nginx、DDNS
+    - application       # 执行 Aria2 与 WebDAV 服务部署
     - vpn               # 执行 Xray (VLESS+Reality) 安装与 SNI 分流配置
 
   tasks:
-    - name: 打印部署状态
+    - name: 打印部署完成状态
       ansible.builtin.debug:
-        msg: "正在部署到 {{ domain }}，管理用户为 {{ web_user }}"
+        msg: "🎉 节点 [{{ inventory_hostname }}] 自动化部署完成！SSH 端口: {{ ssh_port }}，业务域名: {{ domain }}"
