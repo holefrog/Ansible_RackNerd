@@ -6,17 +6,16 @@
 
 ## 一、 当前工程状态
 
-- **架构状态（2026-10-26 定稿）**：
-  - 采用 **2-Role 极简架构**：`roles/security`（访问控制）+ `roles/infrastructure`（系统基建）。
-  - 彻底移除了废弃的 `vars/`、Kuma、Nginx、Certbot、VPN、UFW 等历史遗留。
-  - 针对 Debian 12 进行了极致瘦身，去掉了所有冗余的 `when: ansible_os_family == 'Debian'`。
+- **架构状态（2026-10-26 重构完成）**：
+  - 采用 **4-Role 模块化架构**：`roles/security`（访问控制）+ `roles/infrastructure`（系统基建）+ `roles/application`（应用服务）+ `roles/vpn`（代理网络）。
+  - 对齐 GCP 标准：重构了 `roles/security` 与 `roles/infrastructure`，拆分单一职责文件。
+  - 彻底删除了无用的 `fail2ban`（含模板与 handler），释放内存与磁盘 IO。
+  - 彻底删除了跨系统冗余 `vars/`（Debian.yml/RedHat.yml），针对 Debian 12 极致瘦身，清除了所有 `when: ansible_os_family == 'Debian'`。
+  - 实现了 **22122 端口热切换与 UFW 22 端口自动化闭环硬封**，免去人工手动锁门。
 - **文档体系**：
-  - [README.md](README.md)：项目全局概览与 QuickStart。
+  - [README.md](README.md)：项目全局概览、架构解析与 QuickStart。
   - [AGENTS.md](AGENTS.md)：本项目专属约束与架构铁律。
   - [.agents/AGENTS.md](.agents/AGENTS.md)：通用行为底线。
-  - [docs/architecture.md](docs/architecture.md)：系统网络拓扑与执行时序设计。
-  - [docs/troubleshooting.md](docs/troubleshooting.md)：SSH 与防火墙故障排查手册。
-  - [docs/gcp_ssh_operations_runbook.md](docs/gcp_ssh_operations_runbook.md)：GCP SSH 密钥与端口操作手册。
 
 ---
 
@@ -24,37 +23,47 @@
 
 | 文件 | 作用 | 说明 |
 |---|---|---|
-| `apply.sh` | 运维交互总入口 | 开荒自适应引导 / 密钥生成 / 语法校验 / Deploy / Status / Firewall 同步 |
-| `site.yml` | 部署总 Playbook | 顺序执行 `security` 与 `infrastructure` 两个 Role |
-| `check_status.yml` | 健康看板 Playbook | 巡检 CPU、内存、Swap、自动补丁与云防火墙吻合度 |
+| `ansible.sh` | 运维交互总入口 | 部署环境校验 / 语法校验 / Deploy / Status 巡检看板 |
+| `site.yml` | 部署总 Playbook | 顺序执行 `security`, `infrastructure`, `application`, `vpn` |
+| `check_status.yml` | 健康看板 Playbook | 巡检 CPU、内存、Swap、核心服务、WebDAV 路由及 22 端口闭锁状态 |
+| `close_22.sh` | 应急手动锁门脚本 | 备用工具（正常由 Ansible 部署流自动切断） |
 | `hosts.yml` | 主机清单 | 仅存真实公网 IP（`ansible_host`），保障直连 |
-| `host_vars/vps_01/` | 单机变量 | `vars.yml` (端口/Swap/时区/多公钥) 与 `secrets.yml` (凭据) |
-| `keys/vps_01/` | SSH 密钥对 | 独占存放 `id_ed25519` 密钥对，由 `.gitignore` 保护 |
+| `host_vars/vps_primary/` | 单机变量 | `vars.yml` (端口/Swap/时区/域名等) 与 `secrets.yml` (凭据) |
+| `keys/` | SSH 密钥目录 | 存放私钥对，由 `.gitignore` 保护 |
 
 ---
 
 ## 三、 Roles 执行时序
 
 ### 1. `roles/security`（访问控制）
-1. `cloud_firewall_assert.yml`：断言云端防火墙放行策略与代码完全吻合（开荒期允许放行 22 端口，迁移后封死）。
+1. `firewall.yml`：基于 UFW 放行高位端口 `{{ ssh_port }}` (22122)、80、443，部署期间暂留 22 防自锁。
 2. `ssh.yml`：
    - 合并导入主控公钥与 `extra_ssh_authorized_keys` 多设备信任公钥。
-   - 硬化 `sshd_config`（高位端口 22122，禁用密码、空密码、root 登录）。
+   - 硬化 `sshd_config`（高位端口 22122，禁用密码、空密码，限制 root 密码登录）。
    - 处理 Debian 12 `ssh.socket` 冲突，切换至独立 `ssh.service`。
-   - 重启 sshd 并通过 `wait_for` 验证 22122 端口连通性。
+   - 重启 sshd 并通过本地 `wait_for` 验证 22122 端口连通性。
    - `set_fact` 切换 `ansible_port`，`reset_connection` 刷新长连接。
-   - 自动联动 `gcloud` 从 GCP 云防火墙中剥离 22 端口，实现硬封闭环。
+   - **自动化闭环**：直接调用 UFW 模块删除 22 端口放行规则，实现硬封闭环。
 
 ### 2. `roles/infrastructure`（系统基建）
-1. `system.yml`：全量升级系统包（`apt dist-upgrade`）、安装基础运维工具、配置时区与快捷别名。
+1. `system.yml`：全量升级系统包（`apt dist-upgrade`）、安装基础运维工具、配置时区、快捷别名与自定义 logrotate。
 2. `bbr_swap.yml`：开启 BBR 内核拥塞控制与 fq 调度，优化内存参数，创建并持久化挂载 2GB Swap。
 3. `auto_updates.yml`：安装并启用 `unattended-upgrades` 实现每日安全补丁静默升级。
+4. `nginx.yml`：安装 Nginx 及证书管理，配置 443 端口 Stream TLS SNI 预读分流骨架。
+5. `ddns.yml`：动态域名解析同步。
+
+### 3. `roles/application`（应用服务）
+1. `aria2.yml`：部署 Aria2 下载服务并注入 Nginx 路由。
+2. `webdav.yml`：部署 WebDAV 文件共享服务及前端增强脚本。
+
+### 4. `roles/vpn`（代理网络）
+1. Xray 官方安装、密钥自愈、服务端配置、Nginx 回源集成与客户端凭证分发。
 
 ---
 
 ## 四、 核心设计决策 (Decisions Summary)
 
-1. **白板机自适应开荒**：`apply.sh` 在首次部署时若检测到 22122 不可达，自动放行 22 端口作为开荒通道；若缺少私钥自动生成并引导上传 GCP；部署完成后由 Ansible 自动收回 22 端口。
-2. **GCP 防火墙为唯一网络守门人**：主机层零 iptables / UFW / Fail2ban，零额外 CPU/IOPS 损耗。
+1. **白板机自适应开荒**：`site.yml` pre_task 先探测 22122 是否可达，不可达则 fallback 到 22 端口进行开荒；新端口就绪后由 Ansible 自动闭环切断 22。
+2. **UFW 守门与零 Fail2ban**：高位端口 22122 + 纯密钥认证，杜绝盲扫打爆日志，彻底移除 Fail2ban 降低资源开销。
 3. **多设备 SSH 公钥支持**：通过 `extra_ssh_authorized_keys` 变量，一次性原子注入多台管理设备公钥。
 4. **严格聚焦 Debian 12**：代码扁平，拒绝虚无的跨平台空壳代码。
